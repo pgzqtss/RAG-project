@@ -1,7 +1,7 @@
 from langchain_community.document_loaders import PyPDFLoader, OnlinePDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-file_path = "/mnt/c/Users/znkje/OneDrive/Desktop/Systems/example.pdf"
+file_path = "Users/pingho/RAG-project/example.pdf"
 
 loader = PyPDFLoader(file_path=file_path)
 
@@ -14,7 +14,7 @@ print(f'There are {len(data[0].page_content)} characters in your sample document
 
 # Split the text into sentences (chunk size = 1000 characters)
 # We need chunk overlap to maintain context between chunks for NLP
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 texts = text_splitter.split_documents(data)
 
 print (f'Now you have {len(texts)} documents')
@@ -24,11 +24,14 @@ from langchain_community.vectorstores import Pinecone as LangchainPinecone
 from langchain_openai import OpenAIEmbeddings
 from pinecone import Pinecone, ServerlessSpec
 import os
+import dotenv
 
-embeddings = OpenAIEmbeddings(openai_api_key="openapikey")
+dotenv.load_dotenv()
+
+embeddings = OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY'))
 # initialize pinecone
 pc = Pinecone(
-    api_key = "pineconeapikey",
+    api_key = os.getenv('PINECONE_API_KEY'),
 )
 
 if 'my-index' not in pc.list_indexes().names():

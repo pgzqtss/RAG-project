@@ -1,7 +1,7 @@
 from langchain_community.document_loaders import PyPDFLoader, OnlinePDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-file_path = "Users/pingho/RAG-project/example.pdf"
+file_path = "../RAG-project/example.pdf" # Put exact path for testing
 
 loader = PyPDFLoader(file_path=file_path)
 

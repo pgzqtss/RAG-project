@@ -28,11 +28,13 @@ import dotenv
 
 dotenv.load_dotenv()
 
-embeddings = OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY'))
+embeddings = OpenAIEmbeddings(
+    api_key=os.getenv('OPENAI_API_KEY')
+    )
 # initialize pinecone
 pc = Pinecone(
     api_key = os.getenv('PINECONE_API_KEY'),
-)
+    )
 
 if 'my-index' not in pc.list_indexes().names():
     pc.create_index(
@@ -41,7 +43,7 @@ if 'my-index' not in pc.list_indexes().names():
         metric='cosine',
         spec=ServerlessSpec(
             cloud='aws',
-            ragion='us-east-1',
+            region='us-east-1',
         )
     )
 index_name = "my-index"

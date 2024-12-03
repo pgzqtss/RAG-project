@@ -1,7 +1,8 @@
 import os
 import dotenv
 from langchain_pinecone import PineconeVectorStore
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain.chains import RetrievalQA  
 from pinecone import Pinecone
 
 dotenv.load_dotenv()
@@ -21,7 +22,21 @@ vector_store = PineconeVectorStore(
     namespace=''
 )
 
-query = 'What is the history of natural language processing?'
+query = 'What is the brief history of natural language processing?'
+retriever = vector_store.as_retriever(search_kwargs={"k": 10}) # k most similar vectors
 
-# Finds the 1 vector most similar to the query
-vector_store.similarity_search(query, k=1)
+llm = ChatOpenAI(  
+    openai_api_key=openai_api_key,  
+    model_name='gpt-3.5-turbo',  
+    temperature=0.0  
+)  
+
+# Asks ChatGPT using only data from the vector store
+qa = RetrievalQA.from_chain_type(  
+    llm=llm,  
+    chain_type="stuff",  
+    retriever=retriever  
+)  
+
+a = qa.invoke(query)  
+print(a)

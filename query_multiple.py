@@ -13,7 +13,7 @@ dotenv.load_dotenv()
 embeddings = OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY'))
 pinecone = Pinecone(api_key='PINECONE_API_KEY')
 
-def search_across_namespaces(query, index_name, embeddings, namespaces, top_k=5):
+def search_across_namespaces(query, index_name, embeddings, namespaces, top_k=10):
     combined_results = []
     for namespace in namespaces:
         print(f"Searching in namespace: {namespace}")
@@ -31,7 +31,7 @@ def generate_systematic_review(results, query, model):
     # Create a prompt for systematic review
     prompt = f"""
     You are a researcher. Here is a collection of text chunks relevant to the query: "{query}".
-    Please generate a systematic review summarizing the key points, findings, and insights.
+    Please generate a large systematic review summarising the key points, findings, and insights.
 
     Data:
     {combined_content}
@@ -41,7 +41,7 @@ def generate_systematic_review(results, query, model):
     return model.invoke(prompt)
 
 # Perform search across namespaces
-query = "What are the recent advancements in vaccines for COVID-19?"
+query = "What is the efficacy of vaccines for COVID-19?"
 namespaces = ['paper1','paper2','paper3']  # List of namespaces
 index_name = 'meow'
 results = search_across_namespaces(query, index_name=index_name, embeddings=embeddings, namespaces=namespaces)
@@ -49,4 +49,4 @@ results = search_across_namespaces(query, index_name=index_name, embeddings=embe
 # Generate systematic review 
 model = ChatOpenAI(api_key=os.getenv('OPENAI_API_KEY'))  # Use your LLM
 review = generate_systematic_review(results, query, model)
-print(review)
+print(review.content)

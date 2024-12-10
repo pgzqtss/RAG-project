@@ -6,7 +6,6 @@ import dotenv
 import weave
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
-# import tiktoken
 
 # Initiate Weave logging, Pinecone and OpenAI embedding
 weave.init('Rag-n-Bones')
@@ -163,7 +162,7 @@ def compute_summary_accuracy(summary_text, namespace, model):
     return score
 
 def get_accuracy_score(summaries, model):
-    scores = []
+    scores = {paper : 0 for paper in namespaces}
     with ThreadPoolExecutor() as executor:
         # Map each question's namespace with their respective summaries
         future_to_summary = {
@@ -174,11 +173,10 @@ def get_accuracy_score(summaries, model):
         for future in as_completed(future_to_summary):
             try:
                 score = future.result()  # Waits for the computation to finish and fetch the result
-                scores.append(score)
+                print(f'Score: {score}')
+                scores[namespaces[future_to_summary[future]]] = score
             except Exception as e:
                 print(f"Error computing summary accuracy for namespace index {future_to_summary[future]}: {e}")
-                scores.append(0)  # Handle exception gracefully by assigning a fallback value
-    return scores
     return scores
 
 # Ran concurrently with ThreadPoolExecutor
@@ -197,37 +195,41 @@ def answer_question_for_paper(question, paper_namespace):
 
 # Change how summaries are saved
 # Check for token size
-questions = generate_review_questions(query=review_question, model=model)
+def main():
+    questions = generate_review_questions(query=review_question, model=model)
 
-# Use ThreadPoolExecutor to run each question concurrently
-with ThreadPoolExecutor() as executor:
-    # Submit all question-answering tasks
-    future_to_question = {
-        executor.submit(answer_question_for_paper, question, paper): (question, paper) 
-        for paper in namespaces
-        for question in questions
-    }
+    # Use ThreadPoolExecutor to run each question concurrently
+    with ThreadPoolExecutor() as executor:
+        # Submit all question-answering tasks
+        future_to_question = {
+            executor.submit(answer_question_for_paper, question, paper): (question, paper) 
+            for paper in namespaces
+            for question in questions
+        }
 
-    # Collect results
-    summaries = {paper: [] for paper in namespaces}  # Initialize the summaries dictionary
+        # Collect results
+        summaries = {paper: [] for paper in namespaces}  # Initialize the summaries dictionary
 
-    for future in as_completed(future_to_question):
-        try:
-            question, paper = future_to_question[future]
-            # Collect the response
-            response = future.result()
-            summaries[paper].append(response[2])  # Extract the generated answer
-        except Exception as e:
-            print(f"Error processing question '{question}' for namespace '{paper}': {e}")
+        for future in as_completed(future_to_question):
+            try:
+                question, paper = future_to_question[future]
+                # Collect the response
+                response = future.result()
+                summaries[paper].append(response[2])  # Extract the generated answer
+            except Exception as e:
+                print(f"Error processing question '{question}' for namespace '{paper}': {e}")
 
-# Now structure summaries into the expected format for systematic review
-final_summaries = [summaries[paper] for paper in namespaces]
+    # Now structure summaries into the expected format for systematic review
+    final_summaries = [summaries[paper] for paper in namespaces]
 
-systematic_review = generate_systematic_review(summaries=summaries, 
-                                                query=review_question,
-                                                model=model)
+    systematic_review = generate_systematic_review(summaries=summaries, 
+                                                    query=review_question,
+                                                    model=model)
 
-scores = get_accuracy_score(summaries=summaries, model=model)
+    scores = get_accuracy_score(summaries=summaries, model=model)
 
-print(f'Systematic Review: {systematic_review}')
-print(f'Scores: {scores}')
+    print(f'Systematic Review: {systematic_review}')
+    print(f'Scores: {scores}')
+
+if __name__ == '__main__':
+    main()

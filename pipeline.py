@@ -24,7 +24,7 @@ namespaces = ['paper1','paper2','paper3'] # Names of Papers
 index_name = 'meow'
 
 # Search each paper
-def search_namespace(query, index_name, embeddings, namespace, top_k=10):
+def search_namespace(query, index_name, embeddings, namespace, top_k=5):
     print(f'Searching namespace: {namespace}')
     docsearch = LangchainPinecone.from_existing_index(index_name=index_name, 
                                                       namespace=namespace,
@@ -41,7 +41,7 @@ def generate_review_questions(query, model):
     research query. 
     Here is the query for the review: '{query}'.
 
-    To guide the systematic review process, please generate **5 detailed and focused 
+    To guide the systematic review process, please generate **10 detailed and focused 
     questions** that can be consistently asked for each paper. 
     These questions should help extract relevant insights, findings, or data from the papers 
     in a way that aligns with the query.
@@ -103,6 +103,29 @@ def generate_summary(answers, query, model):
     '''
     return model.invoke(prompt).content
 
+# Generate summaries for each paper concurrently
+def generate_summaries(questions, namespaces):
+    summaries = {paper: [] for paper in namespaces}  # Initialize summaries dictionary
+
+    with ThreadPoolExecutor() as executor:
+        # Submit all question-answering tasks
+        future_to_question = {
+            executor.submit(answer_question_for_paper, question, paper): (question, paper)
+            for paper in namespaces
+            for question in questions
+        }
+
+        # Collect results
+        for future in as_completed(future_to_question):
+            try:
+                question, paper = future_to_question[future]
+                response = future.result()  # Get the answer for the question
+                summaries[paper].append(response[2])  # Extract and append the generated answer
+            except Exception as e:
+                print(f"Error processing question '{question}' for namespace '{paper}': {e}")
+
+    return summaries
+
 # Generate a systematic review based on each paper summary
 @weave.op()
 def generate_systematic_review(summaries, query, model):
@@ -123,7 +146,7 @@ def generate_systematic_review(summaries, query, model):
     Systematic Review:
     '''
 
-    return model.invoke(prompt).content
+    return model.invoke(prompt)
 
 # Function to compute the summary accuracy score using ChatGPT reasoning
 @weave.op()
@@ -166,14 +189,13 @@ def get_accuracy_score(summaries, model):
     with ThreadPoolExecutor() as executor:
         # Map each question's namespace with their respective summaries
         future_to_summary = {
-            executor.submit(compute_summary_accuracy, summary, namespaces[i], model): i
-            for i, summary in enumerate(summaries)
+            executor.submit(compute_summary_accuracy, summaries.get(namespaces[i]), namespaces[i], model): i
+            for i in range(len(namespaces))
         }
 
         for future in as_completed(future_to_summary):
             try:
                 score = future.result()  # Waits for the computation to finish and fetch the result
-                print(f'Score: {score}')
                 scores[namespaces[future_to_summary[future]]] = score
             except Exception as e:
                 print(f"Error computing summary accuracy for namespace index {future_to_summary[future]}: {e}")
@@ -193,40 +215,28 @@ def answer_question_for_paper(question, paper_namespace):
                                     model=model)
     return question, paper_namespace, answer
 
+def filter_low_accuracy_papers(summaries, model, threshold=70):
+    scores = get_accuracy_score(summaries=summaries, model=model)
+
+    # Remove papers below the accuracy threshold
+    filtered_summaries = {paper: summaries[paper] for paper in summaries if scores.get(paper, 0) >= threshold}
+
+    return filtered_summaries, scores
+
 # Change how summaries are saved
 # Check for token size
 def main():
+    # Get questions used for a systematic review
     questions = generate_review_questions(query=review_question, model=model)
 
-    # Use ThreadPoolExecutor to run each question concurrently
-    with ThreadPoolExecutor() as executor:
-        # Submit all question-answering tasks
-        future_to_question = {
-            executor.submit(answer_question_for_paper, question, paper): (question, paper) 
-            for paper in namespaces
-            for question in questions
-        }
+    # Get summaries
+    summaries = generate_summaries(questions=questions, namespaces=namespaces)
 
-        # Collect results
-        summaries = {paper: [] for paper in namespaces}  # Initialize the summaries dictionary
+    filtered_summaries, scores = filter_low_accuracy_papers(summaries, model=model)
 
-        for future in as_completed(future_to_question):
-            try:
-                question, paper = future_to_question[future]
-                # Collect the response
-                response = future.result()
-                summaries[paper].append(response[2])  # Extract the generated answer
-            except Exception as e:
-                print(f"Error processing question '{question}' for namespace '{paper}': {e}")
-
-    # Now structure summaries into the expected format for systematic review
-    final_summaries = [summaries[paper] for paper in namespaces]
-
-    systematic_review = generate_systematic_review(summaries=summaries, 
+    systematic_review = generate_systematic_review(summaries=filtered_summaries, 
                                                     query=review_question,
                                                     model=model)
-
-    scores = get_accuracy_score(summaries=summaries, model=model)
 
     print(f'Systematic Review: {systematic_review}')
     print(f'Scores: {scores}')

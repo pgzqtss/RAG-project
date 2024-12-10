@@ -4,6 +4,7 @@ from pinecone import Pinecone
 import os
 import dotenv
 import weave
+import re
 # import tiktoken
 
 # Initiate Pinecone and OpenAI embedding
@@ -39,7 +40,7 @@ def generate_review_questions(query, model):
     research query. 
     Here is the query for the review: '{query}'.
 
-    To guide the systematic review process, please generate **5 detailed and focused 
+    To guide the systematic review process, please generate **2 detailed and focused 
     questions** that can be consistently asked for each paper. 
     These questions should help extract relevant insights, findings, or data from the papers 
     in a way that aligns with the query.
@@ -116,12 +117,55 @@ def generate_systematic_review(summaries, query, model):
     {summaries}
 
     Please analyze the provided summaries, identify key themes, findings, and trends, and
-    generate a detailed systematic review.
+    generate a detailed systematic review. Include evalutations and any limitations.
 
     Systematic Review:
     '''
 
     return model.invoke(prompt).content
+
+# Function to compute the summary accuracy score using ChatGPT reasoning
+@weave.op()
+def compute_summary_accuracy(summary_text, original_text, model):
+    prompt = f'''
+    You are tasked with evaluating how well the following summary matches the original research context.
+    Based on your analysis, provide a score between 0 and 100 (inclusive) that represents how accurately
+    the summary reflects the main findings, conclusions, and insights of the original research.
+
+    Summary:
+    {summary_text}
+
+    Original Text:
+    {original_text}
+
+    Return only the final score as a number (no extra text).
+    '''
+    response = model.invoke(prompt)
+    try:
+        score_text = response.content.strip()
+        # Extract only the digits in case of any text
+        match = re.search(r'\d+', score_text) 
+        if match:
+            score = int(match.group())  # Extract number and convert to integer
+        else:
+            score = 0
+    except ValueError:
+        score = 0
+
+    return score
+
+def get_accuracy_score(summaries, model):
+    scores =[]
+    for i, summary in enumerate(summaries):
+        original_data = search_namespace(query=review_question,
+                                         index_name=index_name,
+                                         embeddings=embeddings,
+                                         namespace=namespaces[i])
+        original_text = " ".join([text.page_content for text in original_data])
+        score = compute_summary_accuracy(summary_text=summary,original_text=original_text , model=model)
+        scores.append(score)
+
+    return scores
 
 # Change how summaries are saved
 # Make each paper and question in each paper run in parallel
@@ -146,4 +190,8 @@ for paper in namespaces:
 systematic_review = generate_systematic_review(summaries=summaries, 
                                                 query=review_question,
                                                 model=model)
+
+scores = get_accuracy_score(summaries=summaries, model=model)
+
 print(f'Systematic Review: {systematic_review}')
+print(f'Scores: {scores}')

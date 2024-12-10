@@ -5,9 +5,11 @@ import os
 import dotenv
 import weave
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 # import tiktoken
 
-# Initiate Pinecone and OpenAI embedding
+# Initiate Weave logging, Pinecone and OpenAI embedding
+weave.init('Rag-n-Bones')
 dotenv.load_dotenv()
 embeddings = OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY'))
 pinecone = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
@@ -40,7 +42,7 @@ def generate_review_questions(query, model):
     research query. 
     Here is the query for the review: '{query}'.
 
-    To guide the systematic review process, please generate **2 detailed and focused 
+    To guide the systematic review process, please generate **5 detailed and focused 
     questions** that can be consistently asked for each paper. 
     These questions should help extract relevant insights, findings, or data from the papers 
     in a way that aligns with the query.
@@ -126,7 +128,13 @@ def generate_systematic_review(summaries, query, model):
 
 # Function to compute the summary accuracy score using ChatGPT reasoning
 @weave.op()
-def compute_summary_accuracy(summary_text, original_text, model):
+def compute_summary_accuracy(summary_text, namespace, model):
+    original_data = search_namespace(query=review_question,
+                                         index_name=index_name,
+                                         embeddings=embeddings,
+                                         namespace=namespace)
+    original_text = " ".join([text.page_content for text in original_data])
+
     prompt = f'''
     You are tasked with evaluating how well the following summary matches the original research context.
     Based on your analysis, provide a score between 0 and 100 (inclusive) that represents how accurately
@@ -155,38 +163,66 @@ def compute_summary_accuracy(summary_text, original_text, model):
     return score
 
 def get_accuracy_score(summaries, model):
-    scores =[]
-    for i, summary in enumerate(summaries):
-        original_data = search_namespace(query=review_question,
-                                         index_name=index_name,
-                                         embeddings=embeddings,
-                                         namespace=namespaces[i])
-        original_text = " ".join([text.page_content for text in original_data])
-        score = compute_summary_accuracy(summary_text=summary,original_text=original_text , model=model)
-        scores.append(score)
+    scores = []
+    with ThreadPoolExecutor() as executor:
+        # Map each question's namespace with their respective summaries
+        future_to_summary = {
+            executor.submit(compute_summary_accuracy, summary, namespaces[i], model): i
+            for i, summary in enumerate(summaries)
+        }
 
+        for future in as_completed(future_to_summary):
+            try:
+                score = future.result()  # Waits for the computation to finish and fetch the result
+                scores.append(score)
+            except Exception as e:
+                print(f"Error computing summary accuracy for namespace index {future_to_summary[future]}: {e}")
+                scores.append(0)  # Handle exception gracefully by assigning a fallback value
+    return scores
     return scores
 
+# Ran concurrently with ThreadPoolExecutor
+def answer_question_for_paper(question, paper_namespace):
+    # Search namespace for data
+    data = search_namespace(query=question, 
+                             index_name=index_name, 
+                             embeddings=embeddings,
+                             namespace=paper_namespace)
+    
+    # Generate the answer
+    answer = generate_review_answer(question=question, 
+                                    data=data, 
+                                    model=model)
+    return question, paper_namespace, answer
+
 # Change how summaries are saved
-# Make each paper and question in each paper run in parallel
 # Check for token size
-# Check for accuracy score
-weave.init('Rag-n-Bones')
 questions = generate_review_questions(query=review_question, model=model)
-summaries = []
-for paper in namespaces:
-    summary = []
-    for question in questions:
-        data = search_namespace(query=question, 
-                                index_name=index_name, 
-                                embeddings=embeddings,
-                                namespace=paper)
-        
-        answer = generate_review_answer(question=question, 
-                                        data=data, 
-                                        model=model)
-        summary.append(answer)
-    summaries.append(summary)
+
+# Use ThreadPoolExecutor to run each question concurrently
+with ThreadPoolExecutor() as executor:
+    # Submit all question-answering tasks
+    future_to_question = {
+        executor.submit(answer_question_for_paper, question, paper): (question, paper) 
+        for paper in namespaces
+        for question in questions
+    }
+
+    # Collect results
+    summaries = {paper: [] for paper in namespaces}  # Initialize the summaries dictionary
+
+    for future in as_completed(future_to_question):
+        try:
+            question, paper = future_to_question[future]
+            # Collect the response
+            response = future.result()
+            summaries[paper].append(response[2])  # Extract the generated answer
+        except Exception as e:
+            print(f"Error processing question '{question}' for namespace '{paper}': {e}")
+
+# Now structure summaries into the expected format for systematic review
+final_summaries = [summaries[paper] for paper in namespaces]
+
 systematic_review = generate_systematic_review(summaries=summaries, 
                                                 query=review_question,
                                                 model=model)

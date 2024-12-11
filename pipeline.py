@@ -33,15 +33,15 @@ def search_namespace(query, index_name, embeddings, namespace, top_k=5):
 
 # Generates questions that are used to make the systematic review for all papers
 @weave.op()
-def generate_review_questions(query, model):
+def generate_review_questions(model):
     prompt = f'''
     You are a researcher tasked with creating a systematic review by synthesizing information 
     from multiple research papers. 
     The goal is to produce a comprehensive and rigorous systematic review based on a specific 
     research query. 
-    Here is the query for the review: '{query}'.
+    Here is the query for the review: '{review_question}'.
 
-    To guide the systematic review process, please generate **10 detailed and focused 
+    To guide the systematic review process, please generate **2 detailed and focused 
     questions** that can be consistently asked for each paper. 
     These questions should help extract relevant insights, findings, or data from the papers 
     in a way that aligns with the query.
@@ -78,14 +78,37 @@ def generate_review_answer(question, data, model):
     '''
     return model.invoke(prompt).content
 
+# Generate answers for each question per paper concurrently
+def generate_answers(questions, namespaces):
+    answers = {paper: [] for paper in namespaces}  # Initialize summaries dictionary
+
+    with ThreadPoolExecutor() as executor:
+        # Submit all question-answering tasks
+        future_to_question = {
+            executor.submit(answer_question_for_paper, question, paper): (question, paper)
+            for paper in namespaces
+            for question in questions
+        }
+
+        # Collect results
+        for future in as_completed(future_to_question):
+            try:
+                question, paper = future_to_question[future]
+                response = future.result()  # Get the answer for the question
+                answers[paper].append(response[2])  # Extract and append the generated answer
+            except Exception as e:
+                print(f"Error processing question '{question}' for namespace '{paper}': {e}")
+
+    return answers
+
 # Generate a summary of answers to each question for one paper
 @weave.op()
-def generate_summary(answers, query, model):
+def generate_summary(answers, model):
     prompt = f'''
     You are a researcher working on a systematic review and analyzing individual research 
     papers to extract key insights.
 
-    Here is the query guiding the review: '{query}'
+    Here is the query guiding the review: '{review_question}'
 
     Below is the data extracted from one research paper. Your task is to analyze this data
     and generate a concise summary that includes:
@@ -103,27 +126,21 @@ def generate_summary(answers, query, model):
     '''
     return model.invoke(prompt).content
 
-# Generate summaries for each paper concurrently
-def generate_summaries(questions, namespaces):
-    summaries = {paper: [] for paper in namespaces}  # Initialize summaries dictionary
+def generate_summaries(answers, namespaces):
+    summaries = {paper: [] for paper in namespaces}
 
     with ThreadPoolExecutor() as executor:
-        # Submit all question-answering tasks
-        future_to_question = {
-            executor.submit(answer_question_for_paper, question, paper): (question, paper)
+        future_to_summary = {
+            executor.submit(generate_summary, answers.get(paper), model): paper
             for paper in namespaces
-            for question in questions
         }
 
-        # Collect results
-        for future in as_completed(future_to_question):
+        for future in as_completed(future_to_summary):
             try:
-                question, paper = future_to_question[future]
-                response = future.result()  # Get the answer for the question
-                summaries[paper].append(response[2])  # Extract and append the generated answer
+                response = future.result()
+                summaries[future_to_summary[future]] = response
             except Exception as e:
-                print(f"Error processing question '{question}' for namespace '{paper}': {e}")
-
+                 print(f"Error processing answers '{answers}' for namespace '{future_to_summary[future]}': {e}")
     return summaries
 
 # Generate a systematic review based on each paper summary
@@ -146,7 +163,7 @@ def generate_systematic_review(summaries, query, model):
     Systematic Review:
     '''
 
-    return model.invoke(prompt)
+    return model.invoke(prompt).content
 
 # Function to compute the summary accuracy score using ChatGPT reasoning
 @weave.op()
@@ -202,18 +219,18 @@ def get_accuracy_score(summaries, model):
     return scores
 
 # Ran concurrently with ThreadPoolExecutor
-def answer_question_for_paper(question, paper_namespace):
+def answer_question_for_paper(question, paper):
     # Search namespace for data
     data = search_namespace(query=question, 
                              index_name=index_name, 
                              embeddings=embeddings,
-                             namespace=paper_namespace)
+                             namespace=paper)
     
     # Generate the answer
     answer = generate_review_answer(question=question, 
                                     data=data, 
                                     model=model)
-    return question, paper_namespace, answer
+    return question, paper, answer
 
 def filter_low_accuracy_papers(summaries, model, threshold=70):
     scores = get_accuracy_score(summaries=summaries, model=model)
@@ -227,13 +244,18 @@ def filter_low_accuracy_papers(summaries, model, threshold=70):
 # Check for token size
 def main():
     # Get questions used for a systematic review
-    questions = generate_review_questions(query=review_question, model=model)
+    questions = generate_review_questions(model=model)
 
-    # Get summaries
-    summaries = generate_summaries(questions=questions, namespaces=namespaces)
+    # Get all answers from each paper
+    answers = generate_answers(questions=questions, namespaces=namespaces)
 
+    # Get summary of each paper
+    summaries = generate_summaries(answers=answers, namespaces=namespaces)
+
+    # Filter each summary by accuracy
     filtered_summaries, scores = filter_low_accuracy_papers(summaries, model=model)
 
+    # Generate systematic review from summaries
     systematic_review = generate_systematic_review(summaries=filtered_summaries, 
                                                     query=review_question,
                                                     model=model)

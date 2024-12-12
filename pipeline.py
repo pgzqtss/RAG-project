@@ -3,12 +3,12 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from pinecone import Pinecone
 import os
 import dotenv
-import weave
+# import weave
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Initiate Weave logging, Pinecone and OpenAI embedding
-weave.init('Rag-n-Bones')
+# weave.init('Rag-n-Bones')
 dotenv.load_dotenv()
 embeddings = OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY'))
 pinecone = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
@@ -24,7 +24,7 @@ namespaces = ['paper1','paper2','paper3'] # Names of Papers
 index_name = 'meow'
 
 # Search each paper
-def search_namespace(query, index_name, embeddings, namespace, top_k=5):
+def search_namespace(query, index_name, embeddings, namespace, top_k=10):
     print(f'Searching namespace: {namespace}')
     docsearch = LangchainPinecone.from_existing_index(index_name=index_name, 
                                                       namespace=namespace,
@@ -32,8 +32,9 @@ def search_namespace(query, index_name, embeddings, namespace, top_k=5):
     return docsearch.similarity_search(query, k=top_k)
 
 # Generates questions that are used to make the systematic review for all papers
-@weave.op()
+# @weave.op()
 def generate_review_questions(model):
+    print(f'Generating questions from query: {review_question}')
     prompt = f'''
     You are a researcher tasked with creating a systematic review by synthesizing information 
     from multiple research papers. 
@@ -41,7 +42,7 @@ def generate_review_questions(model):
     research query. 
     Here is the query for the review: '{review_question}'.
 
-    To guide the systematic review process, please generate **2 detailed and focused 
+    To guide the systematic review process, please generate **10 detailed and focused 
     questions** that can be consistently asked for each paper. 
     These questions should help extract relevant insights, findings, or data from the papers 
     in a way that aligns with the query.
@@ -57,8 +58,9 @@ def generate_review_questions(model):
     return separated_questions
 
 # Generates answers to a question for one paper using the most similar vector data
-@weave.op()
-def generate_review_answer(question, data, model):
+# @weave.op()
+def generate_review_answer(question, data, paper, model):
+    print(f'Generating answer for {paper} to the question: {question}')
     prompt = f'''
     You are a researcher working on a systematic review. To create the review, you are 
     analyzing individual research papers to extract relevant information.
@@ -102,8 +104,9 @@ def generate_answers(questions, namespaces):
     return answers
 
 # Generate a summary of answers to each question for one paper
-@weave.op()
-def generate_summary(answers, model):
+# @weave.op()
+def generate_summary(answers, paper, model):
+    print(f'Generating summaries of paper: {paper}')
     prompt = f'''
     You are a researcher working on a systematic review and analyzing individual research 
     papers to extract key insights.
@@ -115,6 +118,7 @@ def generate_summary(answers, model):
     - Key points discussed in the paper
     - Significant findings relevant to the query
     - Critical evaluations or observations made in the paper
+    - Specific data points within the paper
 
     Data:
     {answers}
@@ -131,7 +135,7 @@ def generate_summaries(answers, namespaces):
 
     with ThreadPoolExecutor() as executor:
         future_to_summary = {
-            executor.submit(generate_summary, answers.get(paper), model): paper
+            executor.submit(generate_summary, answers.get(paper), paper, model): paper
             for paper in namespaces
         }
 
@@ -144,8 +148,9 @@ def generate_summaries(answers, namespaces):
     return summaries
 
 # Generate a systematic review based on each paper summary
-@weave.op()
+# @weave.op()
 def generate_systematic_review(summaries, query, model):
+    print('Generating systematic review.')
     prompt = f'''
     You are a researcher tasked with creating a systematic review based on individual
     research paper summaries. 
@@ -166,7 +171,7 @@ def generate_systematic_review(summaries, query, model):
     return model.invoke(prompt).content
 
 # Function to compute the summary accuracy score using ChatGPT reasoning
-@weave.op()
+# @weave.op()
 def compute_summary_accuracy(summary_text, namespace, model):
     original_data = search_namespace(query=review_question,
                                          index_name=index_name,
@@ -174,6 +179,7 @@ def compute_summary_accuracy(summary_text, namespace, model):
                                          namespace=namespace)
     original_text = " ".join([text.page_content for text in original_data])
 
+    print(f'Calculating summary accuracy score of {namespace}')
     prompt = f'''
     You are tasked with evaluating how well the following summary matches the original research context.
     Based on your analysis, provide a score between 0 and 100 (inclusive) that represents how accurately
@@ -229,6 +235,7 @@ def answer_question_for_paper(question, paper):
     # Generate the answer
     answer = generate_review_answer(question=question, 
                                     data=data, 
+                                    paper=paper,
                                     model=model)
     return question, paper, answer
 

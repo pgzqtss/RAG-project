@@ -1,0 +1,8 @@
+os
+python-dotenv
+pinecone
+openai
+langchain
+langchain-community
+langchain-openai
+re

@@ -2,6 +2,11 @@
 Rag-n-Bones is a web application that uses an input of PDFs to generate systematic reviews utilising Pinecone indexing and OpenAI's GPT models.
 
 ## Deployment Instructions
+
+### Prerequisites
+- Latest version of `pip` is installed
+
+### Instructions
 1. Clone the repository:
 ```
 ~ git clone https://github.com/pgzqtss/RAG-project.git
@@ -27,4 +32,22 @@ Rag-n-Bones is a web application that uses an input of PDFs to generate systemat
 5. Run `pipeline.py`: (Generates systematic review based on example prompt)
 ```
 ~ python3 backend/pipeline.py
+```
+
+## Testing Instructions
+
+Testing of systematic review generation is done using mocks, therefore there are no actual API calls done during tests.
+
+### Prerequisites
+- Latest version of `pytest` library is installed 
+
+### Instructions
+1. Change to the root directory:
+```
+~ cd RAG-project
+```
+
+2. Run all tests in the backend folder:
+```
+~ pytest backend
 ```

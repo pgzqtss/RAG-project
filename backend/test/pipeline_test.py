@@ -8,7 +8,9 @@ from pipeline import (
     generate_summary,
     generate_systematic_review,
     get_accuracy_score,
-    search_namespace
+    search_namespace,
+    compute_summary_accuracy,
+    filter_low_accuracy_papers
 )
 
 @patch.dict('os.environ', {'PINECONE_API_KEY': 'p-mock_key', 'OPENAI_API_KEY': 'o-mock_key'})
@@ -185,10 +187,72 @@ def test_generate_systematic_review():
         assert result == mock_systematic_review
 
 def test_compute_summary_accuracy():
-    pass
+    mock_summary = 'summary'
+    mock_namespace = 'paper1'
+
+    with patch('pipeline.search_namespace') as mock_search_namespace:
+        mock_response = MagicMock()
+        mock_response.content = 'Original text'
+        mock_search_namespace.return_value = mock_response
+
+        mock_model = MagicMock()
+        mock_model.invoke.return_value.content = '70'
+
+        result = compute_summary_accuracy(summary_text=mock_summary,
+                                          namespace=mock_namespace,
+                                          model=mock_model)
+
+        mock_search_namespace.assert_called_once()
+        mock_model.invoke.assert_called_once()
+        assert result == 70
 
 def test_get_accuracy_score():
-    pass
+    mock_summaries = {
+        'paper1': 'summary',
+        'paper2': 'summary'
+    }
+
+    mock_namespaces = ['paper1', 'paper2']
+
+    expected_result = {
+        'paper1': 70,
+        'paper2': 70
+    }
+    
+    with patch('pipeline.compute_summary_accuracy') as mock_compute_summary_accuracy:
+        mock_compute_summary_accuracy.return_value = 70
+
+        mock_model = MagicMock()
+        mock_model.invoke.return_value = 'Mock response'
+
+        result = get_accuracy_score(summaries=mock_summaries, model=mock_model, namespaces=mock_namespaces)
+
+        assert mock_compute_summary_accuracy.call_count == len(mock_namespaces)
+        assert expected_result == result
+
+        calls = [call.arg for call in mock_compute_summary_accuracy.call_args_list]
+        assert all(len(call) == 3 for call in calls)
 
 def test_filter_low_accuracy_papers():
-    pass
+    mock_summaries = {
+        'paper1': 'summary',
+        'paper2': 'summary'
+    }
+
+    mock_model = MagicMock()
+    mock_model.invoke.return_value = 'Mock response'
+
+    expected_result = {
+        'paper1': 'summary',
+        'paper2': 'summary'
+    }
+
+    with patch('pipeline.get_accuracy_score') as mock_get_accuracy_score:
+        mock_get_accuracy_score.return_value = {
+            'paper1': 70,
+            'paper2': 70
+        }
+
+        result = filter_low_accuracy_papers(summaries=mock_summaries, model= mock_model)
+
+        assert expected_result == result[0]

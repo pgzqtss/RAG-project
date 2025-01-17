@@ -207,7 +207,7 @@ def compute_summary_accuracy(summary_text, namespace, model):
 
     return score
 
-def get_accuracy_score(summaries, model):
+def get_accuracy_score(summaries, model, namespaces=namespaces):
     scores = {paper : 0 for paper in namespaces}
     with ThreadPoolExecutor() as executor:
         # Map each question's namespace with their respective summaries

@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 import os
+
 from pipeline import (
     generate_answers,
     generate_review_answer,
@@ -10,7 +11,9 @@ from pipeline import (
     get_accuracy_score,
     search_namespace,
     compute_summary_accuracy,
-    filter_low_accuracy_papers
+    filter_low_accuracy_papers,
+    answer_question_for_paper,
+    main
 )
 
 @patch.dict('os.environ', {'PINECONE_API_KEY': 'p-mock_key', 'OPENAI_API_KEY': 'o-mock_key'})
@@ -206,6 +209,24 @@ def test_compute_summary_accuracy():
         mock_model.invoke.assert_called_once()
         assert result == 70
 
+def test_invalid_computer_summary_accuracy():
+    mock_summary = 'summary'
+    mock_namespace = 'paper1'
+
+    with patch('pipeline.search_namespace') as mock_search_namespace:
+        mock_search_namespace.return_value.content = 'Data'
+
+        mock_model = MagicMock()
+        mock_model.invoke.return_value.content = 'ABC'
+
+        result = compute_summary_accuracy(summary_text=mock_summary,
+                                          namespace=mock_namespace,
+                                          model=mock_model)
+        
+        mock_search_namespace.assert_called_once()
+        mock_model.invoke.assert_called_once()
+        assert result == 0
+
 def test_get_accuracy_score():
     mock_summaries = {
         'paper1': 'summary',
@@ -256,3 +277,50 @@ def test_filter_low_accuracy_papers():
         result = filter_low_accuracy_papers(summaries=mock_summaries, model= mock_model)
 
         assert expected_result == result[0]
+
+@patch('pipeline.search_namespace')
+def test_answer_question_for_paper(mock_search_namespace):
+    mock_query = 'What is COVID-19?'
+    mock_namespace = 'paper1'
+    mock_data = ['data1', 'data2']
+    mock_answer = 'answer'
+
+    with patch('pipeline.generate_review_answer') as mock_generate_review_answer:
+        mock_search_namespace.return_value = mock_data
+        mock_generate_review_answer.return_value = mock_answer
+
+        result = answer_question_for_paper(question=mock_query,
+                                            paper=mock_namespace)
+        
+        mock_search_namespace.assert_called_once()
+        mock_generate_review_answer.assert_called_once()
+        assert len(result) == 3
+        assert result[0] == mock_query
+        assert result[1] == mock_namespace
+        assert result[2] == mock_answer
+
+@patch('pipeline.generate_review_questions')
+@patch('pipeline.generate_answers')
+@patch('pipeline.generate_summaries')
+@patch('pipeline.filter_low_accuracy_papers')
+@patch('pipeline.generate_systematic_review')
+def test_main(mock_generate_systematic_review, mock_filter_low_accuracy_papers,
+                mock_generate_summaries, mock_generate_answers, mock_generate_review_questions):
+
+    mock_generate_review_questions.return_value = ['What is the cost of the vaccine?']
+    mock_generate_answers.return_value = {'paper1': ['answer'], 'paper2': ['answer']}
+    mock_generate_summaries.return_value = {'paper1': 'summary2', 'paper2': 'summary2'}
+    mock_filter_low_accuracy_papers.return_value = ({'paper1': 'summary1'}, {'paper1': 80})
+    mock_generate_systematic_review.return_value = 'Mock systematic review'
+
+    with patch('builtins.print') as mock_print:  # Mock print to verify output
+        main()
+
+        mock_generate_review_questions.assert_called_once()
+        mock_generate_answers.assert_called_once_with(questions=['What is the cost of the vaccine?'])
+        mock_generate_summaries.assert_called_once_with(answers={'paper1': ['answer'], 'paper2': ['answer']})
+        mock_filter_low_accuracy_papers.assert_called_once()
+        mock_generate_systematic_review.assert_called_once()
+
+        mock_print.assert_any_call('Systematic Review: Mock systematic review')
+        mock_print.assert_any_call("Scores: {'paper1': 80}")

@@ -81,7 +81,7 @@ def generate_review_answer(question, data, paper, model):
     return model.invoke(prompt).content
 
 # Generate answers for each question per paper concurrently
-def generate_answers(questions, namespaces):
+def generate_answers(questions, namespaces=namespaces):
     answers = {paper: [] for paper in namespaces}  # Initialize summaries dictionary
 
     with ThreadPoolExecutor() as executor:
@@ -130,7 +130,7 @@ def generate_summary(answers, paper, model):
     '''
     return model.invoke(prompt).content
 
-def generate_summaries(answers, namespaces):
+def generate_summaries(answers, namespaces=namespaces):
     summaries = {paper: [] for paper in namespaces}
 
     with ThreadPoolExecutor() as executor:
@@ -254,10 +254,10 @@ def main():
     questions = generate_review_questions(model=model)
 
     # Get all answers from each paper
-    answers = generate_answers(questions=questions, namespaces=namespaces)
+    answers = generate_answers(questions=questions)
 
     # Get summary of each paper
-    summaries = generate_summaries(answers=answers, namespaces=namespaces)
+    summaries = generate_summaries(answers=answers)
 
     # Filter each summary by accuracy
     filtered_summaries, scores = filter_low_accuracy_papers(summaries, model=model)

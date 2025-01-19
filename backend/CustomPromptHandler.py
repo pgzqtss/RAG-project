@@ -1,16 +1,20 @@
 import os
+import logging
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-
 from langchain_community.vectorstores import Pinecone as LangchainPinecone
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pinecone import Pinecone, ServerlessSpec
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class CustomPromptHandler:
     def __init__(self, base_prompt, openai_api_key, pinecone_api_key, pinecone_index_name, namespace):
         """
         Initialize the CustomPromptHandler.
-        
+
         :param base_prompt: The base prompt template.
         :param openai_api_key: OpenAI API key for the language model.
         :param pinecone_api_key: Pinecone API key for vector database.
@@ -24,11 +28,13 @@ class CustomPromptHandler:
         self.index_name = pinecone_index_name
         self.namespace = namespace
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        
+
         # Ensure Pinecone index exists
-        if self.index_name not in self.pinecone.list_indexes().names():
-            spec = ServerlessSpec(cloud="aws", region="us-east-1")  # 替换为您的实际配置
+        if self.index_name not in [idx.name for idx in self.pinecone.list_indexes()]:
+            logger.info(f"Index '{self.index_name}' does not exist. Creating it now...")
+            spec = ServerlessSpec(cloud="aws", region="us-east-1")  # Customize as needed
             self.pinecone.create_index(name=self.index_name, dimension=1536, metric="cosine", spec=spec)
+
         self.vector_store = LangchainPinecone.from_existing_index(
             index_name=self.index_name, namespace=self.namespace, embedding=self.embeddings
         )
@@ -55,7 +61,13 @@ class CustomPromptHandler:
         :param top_k: Number of top results to retrieve.
         :return: List of relevant documents.
         """
-        return self.vector_store.similarity_search(query, k=top_k)
+        try:
+            results = self.vector_store.similarity_search(query, k=top_k)
+            logger.info(f"Retrieved {len(results)} documents for query: '{query}'")
+            return results
+        except Exception as e:
+            logger.error(f"Error retrieving documents: {e}")
+            return []
 
     def generate_analysis(self, user_input):
         """
@@ -70,6 +82,9 @@ class CustomPromptHandler:
         # Retrieve relevant documents from the vector database
         retrieved_docs = self.retrieve_similar_documents(query=user_input)
 
+        if not retrieved_docs:
+            return "No relevant documents found to generate analysis."
+
         # Combine the retrieved documents into the prompt
         doc_contents = "\n\n".join([doc.page_content for doc in retrieved_docs])
         complete_prompt = f"""
@@ -80,8 +95,12 @@ class CustomPromptHandler:
         """
 
         # Use the language model to generate the analysis
-        response = self.embeddings.invoke(complete_prompt)
-        return response
+        try:
+            response = self.embeddings.invoke(complete_prompt)
+            return response.content
+        except Exception as e:
+            logger.error(f"Error generating analysis: {e}")
+            return "Error generating analysis."
 
     def upsert_documents(self, file_path):
         """
@@ -89,15 +108,18 @@ class CustomPromptHandler:
 
         :param file_path: Path to the document file.
         """
-        with open(file_path, "r", encoding="utf-8") as file:
-            raw_text = file.read()
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                raw_text = file.read()
 
-        # Split the document into chunks
-        texts = self.text_splitter.split_text(raw_text)
+            # Split the document into chunks
+            texts = self.text_splitter.split_text(raw_text)
 
-        # Insert into the vector database
-        self.vector_store.add_texts(texts, namespace=self.namespace)
-        print(f"Inserted {len(texts)} chunks from {file_path} into Pinecone namespace {self.namespace}.")
+            # Insert into the vector database
+            self.vector_store.add_texts(texts, namespace=self.namespace)
+            logger.info(f"Inserted {len(texts)} chunks from {file_path} into Pinecone namespace {self.namespace}.")
+        except Exception as e:
+            logger.error(f"Error upserting document {file_path}: {e}")
 
 # Example Usage
 if __name__ == "__main__":

@@ -6,3 +6,6 @@ langchain-community
 langchain-openai
 lxml
 pytest
+pandas
+transformers
+tf-keras

@@ -1,0 +1,100 @@
+from flask import Flask, request, jsonify
+import mysql.connector
+import bcrypt
+from flask_cors import CORS
+
+app = Flask(__name__)
+app.secret_key = 'supersecretkey'
+CORS(app)
+
+def connect_to_database():
+    return mysql.connector.connect(
+        host='localhost',
+        user='root',
+        password='',
+        database='user_data'
+    )
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({'error': 'Missing username or password'}), 400
+
+    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    conn = connect_to_database()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(
+            'INSERT INTO users (username, password_hash) VALUES (%s, %s)',
+            (username, password_hash)
+        )
+        conn.commit()
+        return jsonify({'message': ' User registered successfully'}), 201
+    except mysql.connector.IntegrityError:
+        return jsonify({'error': 'User already exists'}), 409
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, password_hash FROM users WHERE username = %s', (username,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if user and bcrypt.checkpw(password.encode('utf-8'), user[1].encode('utf-8')):
+        return jsonify({'message': 'User logged in successfully'}), 200
+    else:
+        return jsonify({'error': 'Invalid username or password'}), 401
+    
+# @app.route('/query', methods=['POST'])
+# def query():
+#     user_input = request.form['user_input']
+#     user_id = int(request.form['user_id'])
+#     model_output = generate_model_output(user_input)
+#     conn = connect_to_database()
+#     cursor = conn.cursor()
+#     cursor.execute(
+#         'INSERT INTO history (user_id, user_input, model_output) VALUES (%s, %s, %s)',
+#         (user_id, user_input, model_output)
+#     )
+#     conn.commit()
+#     cursor.close()
+#     conn.close()
+#     flash(f'Query saved! Model output: {model_output}', 'success')
+#     return redirect(url_for('index'))
+
+# @app.route('/history/<int:user_id>')
+# def view_history(user_id):
+#     conn = connect_to_database()
+#     cursor = conn.cursor()
+#     cursor.execute(
+#         'SELECT user_input, model_output, created_at FROM history WHERE user_id = %s ORDER BY created_at DESC',
+#         (user_id,)
+#     )
+#     records = cursor.fetchall()
+#     cursor.close()
+#     conn.close()
+#     return render_template('history.html', records=records)
+
+# @app.route('/')
+# def index():
+#     return render_template('index.html')
+
+# def generate_model_output(user_input):
+#     return f'Processed: {user_input}'
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)

@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react';
+import React, { useActionState, useState, useEffect} from 'react';
+import Link from 'next/link';
 import './globals.css';
-import { useState } from 'react';
+import { login } from './actions/login_auth';
 
-function Header({ toggleLoginOpen, isLoginOpen, toggleSignUp, isSignUp }) {
+function Header({ toggleLoginOpen, isLoginOpen }) {
   return (
     <div className='w-full'>
       <div className='flex items-center'>
@@ -12,15 +13,13 @@ function Header({ toggleLoginOpen, isLoginOpen, toggleSignUp, isSignUp }) {
         <UserProfile 
           toggleLoginOpen={toggleLoginOpen}
           isLoginOpen={isLoginOpen}
-          toggleSignUp={toggleSignUp}
-          isSignUp={isSignUp}
         />
       </div>
     </div>
   );
 }
 
-function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignUp, isSignUp }) {
+function UserProfile({ toggleLoginOpen, isLoginOpen }) {
   return (
     <div className='flex justify-end w-full'>
       <button
@@ -39,18 +38,20 @@ function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignUp, isSignUp }) {
       <LoginPopup
         toggleLoginOpen={toggleLoginOpen}
         isLoginOpen={isLoginOpen}
-        toggleSignUp={toggleSignUp}
-      />
-      <SignUpPopup
-        toggleSignUp={toggleSignUp}
-        isSignUp={isSignUp}
-        toggleLoginOpen={toggleLoginOpen}
       />
     </div>
   );
 }
 
-function LoginPopup({ toggleLoginOpen, isLoginOpen, toggleSignUp }) {
+function LoginPopup({ toggleLoginOpen, isLoginOpen }) {
+  const [state, action, pending] = useActionState(login, undefined)
+
+  useEffect(() => {
+    if (state?.message === 'Registration successful') {
+      toggleLoginOpen(); 
+    }
+  }, [state]); 
+
   return (
     <div>
       {isLoginOpen && (
@@ -68,15 +69,16 @@ function LoginPopup({ toggleLoginOpen, isLoginOpen, toggleSignUp }) {
                 <img src='xmark.svg' alt='Close Icon' height='20' width='20'></img>
               </button>
             </div>
-            <form onSubmit={toggleLoginOpen} className='space-y-4'>
+            <form action={action} className='space-y-4'>
               <div>
                 <label htmlFor='email' className='block text-gray-700 mb-2'>
-                  Email Address
+                  Username
                 </label>
                 <input
-                  type='email'
-                  id='email'
-                  placeholder='Enter your email'
+                  type='text'
+                  id='username'
+                  name='username'
+                  placeholder='Enter your username'
                   className='w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400'
                   required
                 />
@@ -88,6 +90,7 @@ function LoginPopup({ toggleLoginOpen, isLoginOpen, toggleSignUp }) {
                 <input
                   type='password'
                   id='password'
+                  name='password'
                   placeholder='Enter your password'
                   className='w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400'
                   required
@@ -96,7 +99,7 @@ function LoginPopup({ toggleLoginOpen, isLoginOpen, toggleSignUp }) {
               <button
                 type='submit'
                 className='w-full bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 focus:outline-none'
-                onClick={toggleLoginOpen}
+                disabled={ pending }
               >
                 Login
               </button>
@@ -105,98 +108,18 @@ function LoginPopup({ toggleLoginOpen, isLoginOpen, toggleSignUp }) {
               <div className='items-center text-sm'>
                 Need an account?
               </div>
-              <button
+              <Link
                 className='text-sm text-blue-400 hover:underline focus:outline-none'
-                onClick={() => { toggleLoginOpen(); toggleSignUp(); }}
+                href='/register'
               >
                 Sign Up
-              </button>
+              </Link>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-}
-
-function SignUpPopup({isSignUp, toggleSignUp, toggleLoginOpen}) {
-  return (
-    <div>
-      {isSignUp && (
-        <div className='fixed inset-0 flex items-center justify-center'>
-          <div className='absolute inset-0 bg-black opacity-50'
-          >
-          </div>
-          <div className='relative bg-white p-6 rounded-lg shadow-lg w-96'>
-            <div className='flex items-center'>
-              <h2 className='w-full text-lg font-bold mb-4 '>Sign Up</h2>
-              <button 
-                onClick={toggleSignUp}
-                className='flex justify-end pb-4 transition duration-300 ease-in-out hover:scale-110'
-              >
-                <img src='xmark.svg' alt='Close Icon' height='20' width='20'></img>
-              </button>
-            </div>
-            <form onSubmit={toggleLoginOpen} className='space-y-4'>
-              <div>
-                <label htmlFor='email' className='block text-gray-700 mb-2'>
-                  Email Address
-                </label>
-                <input
-                  type='email'
-                  id='email'
-                  placeholder='e.g. john.doe@email.com'
-                  className='w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400'
-                  required
-                />
-              </div> 
-              <div>
-                <label htmlFor='password' className='block text-gray-700 mb-2'>
-                  Password
-                </label>
-                <input
-                  type='password'
-                  id='password'
-                  placeholder='Enter your password'
-                  className='w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400'
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor='confirmPassword' className='block text-gray-700 mb-2'>
-                  Confirm Password
-                </label>
-                <input
-                  type='password'
-                  id='password'
-                  placeholder='Enter your password'
-                  className='w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400'
-                  required
-                />
-              </div>
-              <button
-                type='submit'
-                className='w-full bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 focus:outline-none'
-              >
-                Sign Up
-              </button>
-            </form>
-            <div className='flex w-full justify-center mt-4 gap-x-2'>
-              <div className='items-center text-sm'>
-                Already have an account?
-              </div>
-              <button
-                className='text-sm text-blue-400 hover:underline focus:outline-none'
-                onClick={() => { toggleLoginOpen(); toggleSignUp(); }}
-              >
-                Log In
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 function InputSection({ currentPrompt, setCurrentPrompt, handleSubmit, isAttachOpen, toggleAttachOpen }) {
@@ -366,7 +289,7 @@ function Sidebar({isCollapsed, toggleIsCollapsed}) {
 }
 
 export default function App() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
 
   const toggleIsCollapsed = () => {
       setIsCollapsed(!isCollapsed);
@@ -374,7 +297,7 @@ export default function App() {
 
   return (
     <div className='flex flex-row overflow-hidden'>
-      <div className={`transition-all duration-300 ${isCollapsed ? 'w-16' : 'min-w-[200pt]'}`}>
+      <div className={`transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-[230pt]'}`}>
           <Sidebar 
             isCollapsed={isCollapsed}
             toggleIsCollapsed={toggleIsCollapsed}

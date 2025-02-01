@@ -1,8 +1,8 @@
-import { SignupSchema } from '../lib/definitions'
+import { SignupSchema } from '../lib/schema'
 import { registerUser } from '../lib/api';
  
 export async function signup(state, formData) {
-  const username = formData.get('username');
+  const username = formData.get('username').toLowerCase();
   const password = formData.get('password');
   const confirmPassword = formData.get('confirmPassword')
   
@@ -28,7 +28,8 @@ export async function signup(state, formData) {
     }
 
     return {
-      message: 'Registration successful'
+      message: 'Registration successful',
+      success: true
     }
   } catch (error) {
     console.error('Error during registration:', error);

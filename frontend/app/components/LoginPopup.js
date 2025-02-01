@@ -1,13 +1,16 @@
 import React, { useActionState, useEffect } from 'react';
 import Link from 'next/link';
-import { login } from '../actions/login_auth';
+import { login as LoginAction} from '../actions/login_auth';
+import { useAuth } from '../api/auth_context';
 
 export default function LoginPopup({ toggleLoginOpen, isLoginOpen }) {
-  const [state, action, pending] = useActionState(login, undefined);
+  const [state, action, pending] = useActionState((state, formData) => LoginAction(state, formData, login), undefined);
+  const { login } = useAuth();
 
   useEffect(() => {
     if (state?.success === true) {
       toggleLoginOpen(); 
+      login(state.username);
     }
   }, [state]); 
 

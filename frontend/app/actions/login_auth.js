@@ -1,6 +1,7 @@
-import { loginUser } from '../lib/api';
+import { loginUser } from '../api/login_api';
+import { useAuth } from '../api/auth_context';
 
-export async function login(state, formData) {
+export async function login(state, formData, login) {
 	const username = formData.get('username').toLowerCase();
 	const password = formData.get('password');
 
@@ -13,8 +14,11 @@ export async function login(state, formData) {
 			}
 		}
 
+		login(username);
+		
 		return {
 			message: 'Login successful',
+			username: username,
 			success: true
 		}
 	} catch (error) {

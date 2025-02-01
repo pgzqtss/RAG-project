@@ -1,5 +1,5 @@
 import { SignupSchema } from '../lib/schema'
-import { registerUser } from '../lib/api';
+import { registerUser } from '../api/register_api';
  
 export async function signup(state, formData) {
   const username = formData.get('username').toLowerCase();

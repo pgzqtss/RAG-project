@@ -2,7 +2,7 @@ import { loginUser } from '../api/login_api';
 import { useAuth } from '../api/auth_context';
 
 export async function login(state, formData, login) {
-	const username = formData.get('username').toLowerCase();
+	const username = formData.get('username');
 	const password = formData.get('password');
 
 	try {

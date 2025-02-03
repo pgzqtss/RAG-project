@@ -2,7 +2,7 @@ import { SignupSchema } from '../lib/schema'
 import { registerUser } from '../api/register_api';
  
 export async function signup(state, formData) {
-  const username = formData.get('username').toLowerCase();
+  const username = formData.get('username');
   const password = formData.get('password');
   const confirmPassword = formData.get('confirmPassword')
   
@@ -20,6 +20,7 @@ export async function signup(state, formData) {
   
   try {
     const response = await registerUser(username, password);
+    console.log(response)
 
     if (response.error) {
       return {

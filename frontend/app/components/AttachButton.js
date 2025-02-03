@@ -1,7 +1,7 @@
 import React from 'react';
 import AttachPopup from './AttachPopup';
 
-export default function AttachButton({ isAttachOpen, toggleAttachOpen }) {
+export default function AttachButton({ isAttachOpen, toggleAttachOpen, id }) {
   return (
     <div className='flex justify-start mt-2'>
       <button
@@ -19,6 +19,7 @@ export default function AttachButton({ isAttachOpen, toggleAttachOpen }) {
       <AttachPopup 
         isAttachOpen={isAttachOpen}
         toggleAttachOpen={toggleAttachOpen}
+        id={id}
       />
     </div>
   );

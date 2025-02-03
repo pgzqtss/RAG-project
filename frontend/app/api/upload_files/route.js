@@ -7,12 +7,13 @@ export async function POST(req) {
   try {
     const formData = await req.formData();
     const files = formData.getAll('files'); // Get all files
+    const id = formData.get('id')
 
     if (!files || files.length === 0) {
       return NextResponse.json({ status: 'fail', error: 'No files received' }, { status: 400 });
     }
 
-    const uploadDir = path.join(process.cwd(), 'public/files');
+    const uploadDir = path.join(process.cwd(), 'public/files', id);
     await fs.mkdir(uploadDir, { recursive: true });
 
     const uploadedFiles = [];
@@ -23,7 +24,7 @@ export async function POST(req) {
       const filePath = path.join(uploadDir, file.name);
 
       await fs.writeFile(filePath, buffer);
-      uploadedFiles.push({ filename: file.name, path: `/files/${file.name}` });
+      uploadedFiles.push({ filename: file.name, path: `/files/${id}/${file.name}` });
     }
 
     revalidatePath('/');

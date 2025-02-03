@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect, useActionState } from 'react';
 import TextArea from './TextArea';
 import SubmitButton from './SubmitButton';
+import { randomBytes } from 'crypto';
+import { upsert } from '../actions/upsert';
 
-export default function InputSection({ currentPrompt, setCurrentPrompt, handleSubmit, isAttachOpen, toggleAttachOpen }) {
+export default function InputSection({ currentPrompt, setCurrentPrompt, isAttachOpen, toggleAttachOpen }) {
+  const [id, setId] = useState(null);
+
+  useEffect(() => {
+    setId(parseInt(randomBytes(4).toString('hex'), 16))
+  }, [])
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    upsert(id);
+    console.log('Prompt submitted:', currentPrompt);
+    setCurrentPrompt('');
+  };
+
+  console.log(id)
   return (
     <div className='w-full min-h-screen flex flex-col justify-center items-center bg-white'>
       <div>
@@ -11,14 +27,16 @@ export default function InputSection({ currentPrompt, setCurrentPrompt, handleSu
         </p>
       </div>
       <div className='flex w-full max-w-2xl pb-32'>
-        <form onSubmit={handleSubmit} className='w-full'>
+        <form onSubmit={ handleSubmit } className='w-full'>
           <TextArea 
             currentPrompt={currentPrompt} 
             setCurrentPrompt={setCurrentPrompt} 
             isAttachOpen={isAttachOpen}
             toggleAttachOpen={toggleAttachOpen}
+            id={id}
           />
-          <SubmitButton />
+          <SubmitButton 
+          />
         </form>
       </div>
     </div>

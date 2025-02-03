@@ -15,12 +15,6 @@ export default function Input() {
     setAttachOpen(!isAttachOpen);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Prompt submitted:', currentPrompt);
-    setCurrentPrompt('');
-  };
-
   return (
     <div className='flex justify-center flex-col items-center bg-white'>
       <Header
@@ -30,7 +24,6 @@ export default function Input() {
       <InputSection
         currentPrompt={currentPrompt}
         setCurrentPrompt={setCurrentPrompt}
-        handleSubmit={handleSubmit}
         isAttachOpen={isAttachOpen}
         toggleAttachOpen={toggleAttachOpen}
       />

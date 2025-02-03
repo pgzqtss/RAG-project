@@ -13,3 +13,4 @@ flask
 flask-cors
 bcrypt
 mysql-connector-python
+pypdf

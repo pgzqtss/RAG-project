@@ -140,10 +140,28 @@ for i, batch in enumerate(test_dataset):
         tokenizer.decode(output, skip_special_tokens=True) for output in outputs
     ])
 
-# Print sample predictions
-print("Printing sample predictions:")
-for i in range(min(5, len(X_test))):
-    print(f"Medical Paper {i + 1}: {X_test[i]}")
-    print(f"Actual Review {i + 1}: {Y_test[i]}")
-    print(f"Predicted Review {i + 1}: {decoded_predictions[i]}")
-    print("------")
+# # Print sample predictions
+# print("Printing sample predictions:")
+# for i in range(min(5, len(X_test))):
+#     print(f"Medical Paper {i + 1}: {X_test[i]}")
+#     print(f"Actual Review {i + 1}: {Y_test[i]}")
+#     print(f"Predicted Review {i + 1}: {decoded_predictions[i]}")
+#     print("------")
+
+def save_predictions_to_txt(filename, X_test, Y_test, decoded_predictions):
+    with open(filename, 'w', encoding='utf-8') as file:
+        file.write("Printing sample predictions:\n\n")
+        print("Write successful! Check test_write.txt")
+        for i in range(min(5, len(X_test))):
+            file.write(f"Medical Paper {i + 1}: {X_test[i]}\n")
+            file.write(f"Actual Review {i + 1}: {Y_test[i]}\n")
+            file.write(f"Predicted Review {i + 1}: {decoded_predictions[i]}\n")
+            file.write("------\n\n")
+    print(f"Predictions saved to {filename}")
+
+print(f"Length of X_test: {len(X_test)}")
+print(f"Length of Y_test: {len(Y_test)}")
+print(f"Length of decoded_predictions: {len(decoded_predictions)}")
+
+# 调用函数，将预测结果写入 txt 文件
+save_predictions_to_txt("predictions.txt", X_test, Y_test, decoded_predictions)

@@ -1,9 +1,8 @@
 import React, { useActionState, useEffect } from 'react';
-import Link from 'next/link';
 import { login as LoginAction} from '../actions/login_auth';
 import { useAuth } from '../api/auth_context';
 
-export default function LoginPopup({ toggleLoginOpen, isLoginOpen }) {
+export default function LoginPopup({ toggleLoginOpen, isLoginOpen, toggleSignupOpen, isSignupOpen }) {
   const [state, action, pending] = useActionState((state, formData) => LoginAction(state, formData, login), undefined);
   const { login } = useAuth();
 
@@ -29,6 +28,12 @@ export default function LoginPopup({ toggleLoginOpen, isLoginOpen }) {
                 <img src='xmark.svg' alt='Close Icon' height='20' width='20'></img>
               </button>
             </div>
+            {state?.errors && (
+              <div className='flex py-2 mb-3 w-[80%] align-middle justify-center items-center rounded-lg border-red-200 border-opacity-50 border-2 bg-red-100 gap-x-2'>
+                <img src='xmark.svg' alt='Check Mark' height='16' width='16'></img>
+                Invalid username or password.
+              </div>
+            )}
             <form action={action} className='space-y-4'>
               <div>
                 <label htmlFor='email' className='block text-gray-700 mb-2'>
@@ -68,12 +73,12 @@ export default function LoginPopup({ toggleLoginOpen, isLoginOpen }) {
               <div className='items-center text-sm'>
                 Need an account?
               </div>
-              <Link
+              <button
                 className='text-sm text-blue-400 hover:underline focus:outline-none'
-                href='/register'
+                onClick={() => {toggleLoginOpen(); toggleSignupOpen();}}
               >
                 Sign Up
-              </Link>
+              </button>
             </div>
           </div>
         </div>

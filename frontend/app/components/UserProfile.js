@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import LoginPopup from './LoginPopup';
+import SignupPopup from './SignupPopup';
 import { useAuth } from '../api/auth_context';
 
-export default function UserProfile({ toggleLoginOpen, isLoginOpen }) {
+export default function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignupOpen, isSignupOpen }) {
   const { user, logout } = useAuth();
   const [isMenuOpen, setMenuOpen] = useState(false);
 
-  const toggleMenuOpen = () => {
-    setMenuOpen(!isMenuOpen);
-  }
+  console.log(isMenuOpen)
+
+  const toggleMenuOpen = () => { setMenuOpen(!isMenuOpen); }
 
   return (
     <div className='flex justify-end w-full'>
@@ -29,7 +30,7 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen }) {
             </div>
           </button>
           {isMenuOpen && (
-            <div className='absolute right-0 z-10 mt-28 mr-4 w-48 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden hover:bg-gray-50'>
+            <div className='absolute right-0 z-10 mt-[80pt] mr-4 w-48 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden hover:bg-gray-50'>
               <div className='py-1'>
                 <button
                   type='button'
@@ -45,7 +46,7 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen }) {
       ) : (
         <button
           type='button'
-          onClick={toggleLoginOpen}
+          onClick={() => {setMenuOpen(false);toggleLoginOpen();}}
         >
           <div className='flex justify-end items-center bg-gray-200 hover:bg-gray-300 rounded-full'>
             <div className='p-3'>
@@ -58,6 +59,14 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen }) {
         </button>
       )}
       <LoginPopup
+        toggleLoginOpen={toggleLoginOpen}
+        isLoginOpen={isLoginOpen}
+        toggleSignupOpen={toggleSignupOpen}
+        isSignupOpen={isSignupOpen}
+      />
+      <SignupPopup
+        toggleSignupOpen={toggleSignupOpen}
+        isSignupOpen={isSignupOpen}
         toggleLoginOpen={toggleLoginOpen}
         isLoginOpen={isLoginOpen}
       />

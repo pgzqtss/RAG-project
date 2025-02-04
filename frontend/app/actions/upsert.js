@@ -3,8 +3,6 @@ import { upsertVectors } from '../api/upsert_api';
 export async function upsert(id) {
   try {
       const response = await upsertVectors(id);
-      console.log('FUCK')
-      console.log(response)
   
       if (response.error) {
         return {

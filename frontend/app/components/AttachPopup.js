@@ -58,7 +58,7 @@ export default function AttachPopup({isAttachOpen, toggleAttachOpen, id}) {
               />
             </div>
             <div className='flex w-full'>
-              <div className='flex w-full items-end justify-start'>
+              <div className='flex w-full items-end justify-start m-1'>
                 <p className={`font-semibold text-sm ${message == 'Upload successful.' ? 'text-green-500' : 'text-red-500'}`}>{message}</p>
               </div>
               <div className='flex w-full items-center justify-end'>

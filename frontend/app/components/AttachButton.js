@@ -12,7 +12,7 @@ export default function AttachButton({ isAttachOpen, toggleAttachOpen, id }) {
         <div className='flex align-middle'>
           <div className='text-gray-700 pr-2'>Attach Papers</div>
           <div className='flex align-middle'>
-            <img src='paperclip.svg' alt='Paperclip Icon' height='18' width='18' />
+            <img src='file-pdf.svg' alt='Paperclip Icon' height='22' width='22'/>
           </div>
         </div>
       </button>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Header from './Header';
 import InputSection from './InputSection';
 
 export default function Input() {
@@ -17,10 +16,6 @@ export default function Input() {
 
   return (
     <div className='flex justify-center flex-col items-center bg-white'>
-      <Header
-        toggleLoginOpen={toggleLoginOpen}
-        isLoginOpen={isLoginOpen}
-      />
       <InputSection
         currentPrompt={currentPrompt}
         setCurrentPrompt={setCurrentPrompt}

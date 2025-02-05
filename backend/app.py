@@ -20,6 +20,7 @@ CORS(app)
 
 dotenv.load_dotenv()
 pinecone = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+pinecone_index_name = os.getenv('PINECONE_INDEX_NAME')
 embeddings = OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY'))
 model = ChatOpenAI(api_key=os.getenv('OPENAI_API_KEY'), 
                    model='gpt-3.5-turbo',
@@ -135,11 +136,11 @@ def clean_text(text):
     text = sub(r'\b(\w+)-\s+(\w+)\b', r'\1\2', text)
     return text.strip()
 from time import sleep
-@app.route('/api/upsert', methods=['POST'])
 def upsert():
     sleep(5)
     return jsonify({'message': 'PDFs have been upserted into Pinecone successfully'}), 200
 
+@app.route('/api/upsert', methods=['POST'])
 def upsert2():
     data = request.json
     id = data.get('id')
@@ -149,7 +150,6 @@ def upsert2():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-    pinecone_index_name = str(id)
     print(f'pinecone.list_indexes().names(): {pinecone.list_indexes().names()}')
 
     if pinecone_index_name not in pinecone.list_indexes().names():
@@ -189,10 +189,11 @@ Generate Systematic Review
 
 '''
 
-def search_namespace(query, index_name, namespace, top_k=10):
+def search_namespace(query, namespace, top_k=10):
     print(f'Searching namespace: {namespace}')
-    docsearch = LangchainPinecone.from_existing_index(index_name=index_name, 
-                                                      namespace=namespace)
+    docsearch = LangchainPinecone.from_existing_index(index_name=pinecone_index_name, 
+                                                      namespace=namespace,
+                                                      embedding=embeddings)
     return docsearch.similarity_search(query, k=top_k)
 
 # Generates questions that are used to make the systematic review for all papers
@@ -330,63 +331,10 @@ def generate_systematic_review(summaries, query):
 
     return model.invoke(prompt).content
 
-# Function to compute the summary accuracy score using ChatGPT reasoning
-def compute_summary_accuracy(summary_text, namespace, review_question, index_name):
-    original_data = search_namespace(query=review_question,
-                                         index_name=index_name,
-                                         namespace=namespace)
-    original_text = " ".join([text.page_content for text in original_data])
-
-    print(f'Calculating summary accuracy score of {namespace}')
-    prompt = f'''
-    You are tasked with evaluating how well the following summary matches the original research context.
-    Based on your analysis, provide a score between 0 and 100 (inclusive) that represents how accurately
-    the summary reflects the main findings, conclusions, and insights of the original research.
-
-    Summary:
-    {summary_text}
-
-    Original Text:
-    {original_text}
-
-    Return only the final score as a number (no extra text).
-    '''
-    response = model.invoke(prompt)
-    try:
-        score_text = response.content.strip()
-        # Extract only the digits in case of any text
-        match = search(r'\d+', score_text) 
-        if match:
-            score = int(match.group())  # Extract number and convert to integer
-        else:
-            score = 0
-    except ValueError:
-        score = 0
-
-    return score
-
-def get_accuracy_score(summaries, namespaces, review_question, index_name):
-    scores = {paper : 0 for paper in namespaces}
-    with ThreadPoolExecutor() as executor:
-        # Map each question's namespace with their respective summaries
-        future_to_summary = {
-            executor.submit(compute_summary_accuracy, summaries.get(namespaces[i]), namespaces[i], review_question, index_name): i
-            for i in range(len(namespaces))
-        }
-
-        for future in as_completed(future_to_summary):
-            try:
-                score = future.result()  # Waits for the computation to finish and fetch the result
-                scores[namespaces[future_to_summary[future]]] = score
-            except Exception as e:
-                print(f"Error computing summary accuracy for namespace index {future_to_summary[future]}: {e}")
-    return scores
-
 # Ran concurrently with ThreadPoolExecutor
-def answer_question_for_paper(question, paper, index_name):
+def answer_question_for_paper(question, paper):
     # Search namespace for data
-    data = search_namespace(query=question, 
-                             index_name=index_name, 
+    data = search_namespace(query=question,  
                              namespace=paper)
     
     # Generate the answer
@@ -395,21 +343,8 @@ def answer_question_for_paper(question, paper, index_name):
                                     paper=paper)
     return question, paper, answer
 
-def filter_low_accuracy_papers(summaries, threshold=70):
-    scores = get_accuracy_score(summaries=summaries)
-
-    # Remove papers below the accuracy threshold
-    filtered_summaries = {paper: summaries[paper] for paper in summaries if scores.get(paper, 0) >= threshold}
-
-    return filtered_summaries, scores
-
 @app.route('/api/generate', methods=['POST'])
 def generate():
-    sleep(5)
-    return jsonify({'message': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'}), 200
-
-
-def generate2():
     data = request.json
     review_question = data.get('prompt')
     id = data.get('id')
@@ -431,15 +366,13 @@ def generate2():
                                    namespaces=namespaces, 
                                    review_question=review_question)
 
-    # Filter each summary by accuracy
-    filtered_summaries, scores = filter_low_accuracy_papers(summaries=summaries)
-
     # Generate systematic review from summaries
-    systematic_review = generate_systematic_review(summaries=filtered_summaries, 
+    systematic_review = generate_systematic_review(summaries=summaries, 
                                                     query=review_question)
 
     print(f'Systematic Review: {systematic_review}')
-    print(f'Scores: {scores}')
+
+    return jsonify({'systematic_review': systematic_review}), 200
     
 # @app.route('/query', methods=['POST'])
 # def query():

@@ -10,8 +10,6 @@ export async function loginUser(username, password) {
 
     const data = await response.json();
 
-    revalidatePath('/');
-
     return data;
   } catch (error) {
     console.error('Error logging in:', error);

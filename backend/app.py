@@ -134,9 +134,13 @@ def clean_text(text):
     # Merge split words
     text = sub(r'\b(\w+)-\s+(\w+)\b', r'\1\2', text)
     return text.strip()
-
+from time import sleep
 @app.route('/api/upsert', methods=['POST'])
 def upsert():
+    sleep(5)
+    return jsonify({'message': 'PDFs have been upserted into Pinecone successfully'}), 200
+
+def upsert2():
     data = request.json
     id = data.get('id')
     
@@ -401,6 +405,7 @@ def filter_low_accuracy_papers(summaries, threshold=70):
 
 @app.route('/api/generate', methods=['POST'])
 def generate():
+    sleep(5)
     return jsonify({'message': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'}), 200
 
 

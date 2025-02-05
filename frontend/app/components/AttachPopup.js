@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 
-export default function AttachPopup({isAttachOpen, toggleAttachOpen, id}) {
+export default function AttachPopup({ isAttachOpen, toggleAttachOpen, id, refreshFiles }) {
   const fileInput = useRef(null); 
   const [message, setMessage] = useState('');
 
@@ -24,8 +24,9 @@ export default function AttachPopup({isAttachOpen, toggleAttachOpen, id}) {
       });
 
       const result = await response.json();
-      setMessage(result.status === 'success' ? "Upload successful." : "Upload failed.");
+      setMessage(result.status === 'Success' ? "Upload successful." : "Upload failed.");
       console.log(result.status);
+      refreshFiles();
     } catch (error) {
       console.error('Error uploading files:', error);
       setMessage(error.message || 'Upload failed.')
@@ -62,7 +63,10 @@ export default function AttachPopup({isAttachOpen, toggleAttachOpen, id}) {
                 <p className={`font-semibold text-sm ${message == 'Upload successful.' ? 'text-green-500' : 'text-red-500'}`}>{message}</p>
               </div>
               <div className='flex w-full items-center justify-end'>
-                <button className='bg-gray-200 rounded-full shadow-sm px-4 py-2 text-gray-700 hover:bg-gray-300' onClick={uploadFile}>Upload</button>
+                <button className='bg-gray-200 rounded-full shadow-sm px-4 py-2 text-gray-700 hover:bg-gray-300' 
+                onClick={uploadFile}>
+                  Upload
+                </button>
               </div>
             </div>
           </div>

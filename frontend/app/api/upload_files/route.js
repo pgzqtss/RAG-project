@@ -10,7 +10,7 @@ export async function POST(req) {
     const id = formData.get('id')
 
     if (!files || files.length === 0) {
-      return NextResponse.json({ status: 'fail', error: 'No files received' }, { status: 400 });
+      return NextResponse.json({ status: 'Fail', error: 'No files received' }, { status: 400 });
     }
 
     const uploadDir = path.join(process.cwd(), 'public/files', id);
@@ -29,9 +29,9 @@ export async function POST(req) {
 
     revalidatePath('/');
 
-    return NextResponse.json({ status: 'success', files: uploadedFiles });
+    return NextResponse.json({ status: 'Success', files: uploadedFiles });
   } catch (e) {
     console.error(e);
-    return NextResponse.json({ status: 'fail', error: e.message }, { status: 500 });
+    return NextResponse.json({ status: 'Fail', error: e.message }, { status: 500 });
   }
 }

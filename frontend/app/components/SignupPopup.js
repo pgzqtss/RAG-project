@@ -34,6 +34,12 @@ export default function SignupPopup({ toggleSignupOpen, isSignupOpen, toggleLogi
                 User registered successfully.
               </div>
             )}
+            {state?.error && (
+              <div className='flex py-2 mb-3 w-[70%] align-middle justify-center items-center rounded-lg border-red-200 border-opacity-50 border-2 bg-red-100 gap-x-2'>
+                <img src='xmark.svg' alt='Check Mark' height='16' width='16'></img>
+                Username already exists.
+              </div>
+            )}
             <form action={ action } className='space-y-4'>
               <div>
                 <label htmlFor='username' className='block text-gray-700 mb-2'>

@@ -9,6 +9,9 @@ export async function generateText(prompt, id) {
     });
 
     const data = await response.json();
+
+    revalidatePath('/');
+
     return data;
   } catch (error) {
     console.error('Error generating systematic review:', error);

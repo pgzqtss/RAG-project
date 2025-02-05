@@ -3,7 +3,7 @@ import AttachButton from './AttachButton';
 
 export default function TextArea({ currentPrompt, setCurrentPrompt, isAttachOpen, toggleAttachOpen, id }) {
   return (
-    <div className='w-full h-28 p-3 border-white bg-gray-100 rounded-2xl flex flex-col justify-between'>
+    <div className='w-full min-h-32 p-3 border-white bg-gray-100 rounded-2xl flex flex-col justify-between'>
       <textarea
         value={currentPrompt}
         onChange={(e) => setCurrentPrompt(e.target.value)}

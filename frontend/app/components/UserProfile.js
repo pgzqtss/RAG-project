@@ -7,8 +7,6 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignup
   const { user, logout } = useAuth();
   const [isMenuOpen, setMenuOpen] = useState(false);
 
-  console.log(isMenuOpen)
-
   const toggleMenuOpen = () => { setMenuOpen(!isMenuOpen); }
 
   return (

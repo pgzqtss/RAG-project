@@ -18,14 +18,14 @@ export default function Layout({ children }) {
     <html lang='en'>
       <body>
         <AuthProvider>
-          <div className="flex flex-row max-h-screen">
-            <div className={`transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-[230pt]'}`}>
+          <div className="flex flex-row">
+            <div className={`transition-all duration-300 ${isCollapsed ? 'w-16' : 'min-w-[200pt]'}`}>
               <Sidebar 
                 isCollapsed={isCollapsed} 
                 toggleIsCollapsed={toggleIsCollapsed} 
               />
             </div>
-            <div className="flex flex-col w-full bg-white p-4">
+            <div className="flex flex-col h-full w-full bg-white p-4">
               <Header 
                 toggleLoginOpen={toggleLoginOpen} 
                 isLoginOpen={isLoginOpen}

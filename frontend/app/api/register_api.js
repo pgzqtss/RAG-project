@@ -9,6 +9,9 @@ export async function registerUser(username, password) {
     });
 
     const data = await response.json();
+
+    revalidatePath('/');
+    
     return data;
   } catch (error) {
     console.error('Error registering user:', error);

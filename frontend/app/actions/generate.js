@@ -11,6 +11,7 @@ export async function generate(prompt, id) {
       }
   
       return {
+        systematic_review: response.message,
         message: 'Systematic review has been generated sucessfully',
         success: true
       }

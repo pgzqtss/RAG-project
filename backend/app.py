@@ -27,7 +27,7 @@ model = ChatOpenAI(api_key=os.getenv('OPENAI_API_KEY'),
                    temperature=0)
 
 def get_namespaces(id):
-    path = f'/Users/pingho/RAG-project/frontend/public/files/{str(id)}'
+    path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public', 'files', str(id))
     namespaces = {} # Namespaces are the same as the file names
 
     for filename in os.listdir(path):

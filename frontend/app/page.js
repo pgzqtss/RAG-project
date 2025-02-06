@@ -18,6 +18,9 @@ function MainContent() {
 export default function App() {
   return (
     <AuthProvider>
+      <div>
+        Note: You will need to sign up before generating. Will add logic to not allow generation if not logged in.
+      </div>
       <MainContent />
     </AuthProvider>
   );

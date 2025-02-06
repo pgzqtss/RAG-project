@@ -1,12 +1,13 @@
 'use client';
 
-import React, { use, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../globals.css';
 import { useSearchParams } from 'next/navigation';
-import { upsert } from '../actions/upsert';
-import { generate } from '../actions/generate';
 import Loading from '../components/Loading';
 import SystematicReview from '../components/SystematicReviewDisplay';
+import { query } from '../actions/query_history';
+import { GetSystematicReview } from '../actions/get_systematic_review';
+import { use } from 'react';
 
 export default function Page({ params }) {
   const resolvedParams = use(params);
@@ -17,43 +18,59 @@ export default function Page({ params }) {
 
   const [isUpsertLoading, setUpsertLoading] = useState(false);
   const [isGenerateLoading, setGenerateLoading] = useState(false);
-  const [generateResponse, setGenerateResponse] = useState('');
+  const [displayText, setDisplayText] = useState(false);
+  const [generate, setGenerate] = useState(false);
+  const [input, setInput] = useState('')
+  const [output, setOutput] = useState('')
+
+  const toggleUpdate = () => setGenerate(prev => !prev);
+  
+  const fetchData = async () => {
+    const response = await query(id);
+
+    if (response?.success) {
+      setDisplayText(true);
+      const data = await query(id);
+      setInput(data.prompt);
+      setOutput(data.systematic_review);
+
+    } else {
+      setGenerate(true);
+    }
+  };
 
   useEffect(() => {
-    async function fetchData() {
-      setUpsertLoading(true);
-      try {
-        await upsert(id, prompt);
-      } catch (error) {
-        console.error('Upsert failed:', error);
-      }
-      setUpsertLoading(false);
+    const timeout = setTimeout(() => {
+      fetchData();
+    }, 1000);
 
-      setGenerateLoading(true);
-      try {
-        const generateRes = await generate(prompt, id);
-        console.log(generateRes)
-        setGenerateResponse(generateRes.systematic_review);
-      } catch (error) {
-        console.error('Generation failed:', error);
-        setGenerateResponse('Error during generation.');
-      }
-      setGenerateLoading(false);
-    }
+    return () => clearTimeout(timeout);
+  }, []);
 
-    fetchData();
-  }, [id, prompt]);
+  useEffect(() => {
+    if (!generate) return;
+
+    const generateReview = async () => {
+      await GetSystematicReview({
+        setUpsertLoading,
+        setGenerateLoading,
+        id,
+        prompt,
+        toggleUpdate,
+        setGenerate,
+      });
+      
+      await fetchData();
+    };
+    
+    generateReview();
+  }, [generate]);
 
   return (
     <div className='h-full overflow-hidden'>
-      {isUpsertLoading ? <Loading message='Upserting Vectors'/> : ''}
-      {isGenerateLoading ? <Loading message='Generating Systematic Review' /> : ''}
-      {!isUpsertLoading && !isGenerateLoading && (
-        <SystematicReview 
-          prompt={prompt}
-          text={generateResponse}
-        />
-      )};
+      {isUpsertLoading && <Loading message='Upserting Vectors' />}
+      {isGenerateLoading && <Loading message='Generating Systematic Review' />}
+      {displayText && <SystematicReview prompt={input} text={output} />}
     </div>
   );
 }

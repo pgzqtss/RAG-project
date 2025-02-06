@@ -3,6 +3,8 @@ import { generateText } from '../api/generate_api';
 export async function generate(prompt, id) {
   try {
       const response = await generateText(prompt, id);
+      console.log('PIKA')
+      console.log(response)
   
       if (response.error) {
         return {

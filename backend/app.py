@@ -373,7 +373,84 @@ def generate():
     print(f'Systematic Review: {systematic_review}')
 
     return jsonify({'systematic_review': systematic_review}), 200
-    
+
+
+'''
+
+History Database Functions
+
+'''
+
+@app.route('/api/save', methods=['POST'])
+def save_history():
+    data = request.json
+    user_id = data.get('user_id')
+    user_id = user_id[0]
+    prompt_id = data.get('prompt_id')
+    prompt = data.get('prompt')
+    systematic_review = data.get('systematic_review')
+
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'INSERT INTO history (user_id, prompt_id, user_input, model_output) VALUES (%s, %s, %s, %s)',
+            (user_id, prompt_id, prompt, systematic_review)
+        )
+        conn.commit()
+        return jsonify({'message': 'Systematic review has been stored successfully'})
+    except mysql.connector.IntegrityError:
+        return jsonify({'error': 'Systematic review already exists'}), 409
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/query', methods=['POST'])
+def query():
+    data = request.json
+    prompt_id = data.get('prompt_id')
+
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'SELECT user_input, model_output FROM history WHERE prompt_id = %s',
+            (prompt_id,)
+        )
+        result = cursor.fetchone()
+        user_input, model_output = result
+        return jsonify({'message': 'Found systematic review successfully',
+                        'prompt': user_input,
+                        'systematic_review': model_output}), 200
+    except:
+        return jsonify({'error': 'No systematic review found'}), 404
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/query_user', methods=['POST'])
+def query_user():
+    data = request.json
+    username = data.get('username')
+    print(f'Username: {username}')
+
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'SELECT id FROM users WHERE username = %s',
+            (username,)
+        )
+        result = cursor.fetchone()
+        return jsonify({'message': 'Found user successfully',
+                        'user_id': result}), 200
+    except:
+        return jsonify({'error': 'No user found'}), 404
+    finally:
+        cursor.close()
+        conn.close()
+        
+
 # @app.route('/query', methods=['POST'])
 # def query():
 #     user_input = request.form['user_input']

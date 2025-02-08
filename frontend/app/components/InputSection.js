@@ -24,7 +24,7 @@ export default function InputSection({ currentPrompt, setCurrentPrompt, isAttach
 
 
   return (
-    <div className='w-full h-full flex flex-col justify-center align-center items-center mt-[15%] bg-white overflow-y-auto'>
+    <div className='w-full h-full flex flex-col justify-center align-center items-center mt-[250px] bg-white overflow-y-auto'>
       <div>
         <p className=' text-2xl font-semibold text-gray-700 text-center mb-4 overflow-y-auto'>
           Ask a Research Question
@@ -37,11 +37,12 @@ export default function InputSection({ currentPrompt, setCurrentPrompt, isAttach
             setCurrentPrompt={setCurrentPrompt} 
             isAttachOpen={isAttachOpen}
             toggleAttachOpen={toggleAttachOpen}
+            isInputEmpty={isInputEmpty}
             id={id}
           />
-          <SubmitButton 
+          {/* <SubmitButton 
             isInputEmpty={isInputEmpty}
-          />
+          /> */}
         </form>
       </div>
     </div>

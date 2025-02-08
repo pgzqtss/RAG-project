@@ -1,37 +1,39 @@
 'use client';
 import { useRef, useState } from 'react';
+import { uploadFile } from '../actions/upload_file';
 
 export default function AttachPopup({ isAttachOpen, toggleAttachOpen, id, refreshFiles }) {
   const fileInput = useRef(null); 
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  async function uploadFile(event) {
-    event.preventDefault();
+  // async function uploadFile(event) {
+  //   event.preventDefault();
 
-    const formData = new FormData();
-    formData.append('id', id);
+  //   const formData = new FormData();
+  //   formData.append('id', id);
 
-    if (fileInput.current && fileInput.current.files) {
-      Array.from(fileInput.current.files).forEach((file) => {
-        formData.append('files', file);
-      });
-    }
+  //   if (fileInput.current && fileInput.current.files) {
+  //     Array.from(fileInput.current.files).forEach((file) => {
+  //       formData.append('files', file);
+  //     });
+  //   }
 
-    try {
-      const response = await fetch('/api/upload_files', {
-        method: 'POST',
-        body: formData,
-      });
+  //   try {
+  //     const response = await fetch('/api/upload_files', {
+  //       method: 'POST',
+  //       body: formData,
+  //     });
 
-      const result = await response.json();
-      setMessage(result.status === 'Success' ? "Upload successful." : "Upload failed.");
-      console.log(result.status);
-      refreshFiles();
-    } catch (error) {
-      console.error('Error uploading files:', error);
-      setMessage(error.message || 'Upload failed.')
-    }
-  }
+  //     const result = await response.json();
+  //     setMessage(result.status === 'Success' ? "Upload successful." : "Upload failed.");
+  //     console.log(result.status);
+  //     refreshFiles();
+  //   } catch (error) {
+  //     console.error('Error uploading files:', error);
+  //     setMessage(error.message || 'Upload failed.')
+  //   }
+  // }
 
 
   return (
@@ -63,8 +65,14 @@ export default function AttachPopup({ isAttachOpen, toggleAttachOpen, id, refres
                 <p className={`font-semibold text-sm ${message == 'Upload successful.' ? 'text-green-500' : 'text-red-500'}`}>{message}</p>
               </div>
               <div className='flex w-full items-center justify-end'>
+                {loading && (
+                  <>
+                    <p className='flex justify-end font-semibold text-sm items-center'>Uploading...</p>
+                    <img src='loading-ring.svg' alt='Loading Icon' height='20' width='20' className='mx-2'></img>
+                  </>
+                )}
                 <button className='bg-gray-200 rounded-full shadow-sm px-4 py-2 text-gray-700 hover:bg-gray-300' 
-                onClick={uploadFile}>
+                onClick={(event) => uploadFile(event, fileInput, id, setMessage, refreshFiles, setLoading)}>
                   Upload
                 </button>
               </div>

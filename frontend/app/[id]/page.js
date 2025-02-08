@@ -42,7 +42,7 @@ export default function Page({ params }) {
   useEffect(() => {
     const timeout = setTimeout(() => {
       fetchData();
-    }, 1000);
+    }, 500);
 
     return () => clearTimeout(timeout);
   }, []);
@@ -67,7 +67,7 @@ export default function Page({ params }) {
   }, [generate]);
 
   return (
-    <div className='h-full overflow-hidden'>
+    <div className='flex h-full overflow-hidden'>
       {isUpsertLoading && <Loading message='Upserting Vectors' />}
       {isGenerateLoading && <Loading message='Generating Systematic Review' />}
       {displayText && <SystematicReview prompt={input} text={output} />}

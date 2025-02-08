@@ -15,7 +15,7 @@ export default function Layout({ children }) {
   const toggleSignupOpen = () => setSignupOpen(!isSignupOpen);
 
   return (
-    <html lang='en'>
+    <html lang='en' className='h-screen'>
       <body>
         <AuthProvider>
           <div className="flex flex-row">
@@ -25,7 +25,7 @@ export default function Layout({ children }) {
                 toggleIsCollapsed={toggleIsCollapsed} 
               />
             </div>
-            <div className="flex flex-col h-full w-full bg-white p-4">
+            <div className="flex flex-col h-screen w-full bg-white p-4">
               <Header 
                 toggleLoginOpen={toggleLoginOpen} 
                 isLoginOpen={isLoginOpen}

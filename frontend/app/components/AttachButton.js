@@ -35,6 +35,7 @@ export default function AttachButton({ isAttachOpen, toggleAttachOpen, id }) {
         <Attachments 
           id={id}
           refresh={refresh}
+          refreshFiles={refreshFiles}
         />
       </div>
     </div>

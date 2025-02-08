@@ -17,7 +17,7 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignup
             type='button'
             onClick={toggleMenuOpen}
           >
-            <div className='flex justify-end items-center bg-gray-200 hover:bg-gray-300 rounded-full'>
+            <div className='flex justify-end items-center bg-gray-100 hover:bg-gray-200 rounded-full'>
               <div className='p-3'>
                 <img src='user.svg' alt='User Icon' height='16' width='16' />
               </div>

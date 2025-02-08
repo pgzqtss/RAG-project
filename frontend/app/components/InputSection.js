@@ -24,14 +24,14 @@ export default function InputSection({ currentPrompt, setCurrentPrompt, isAttach
 
 
   return (
-    <div className='w-full flex flex-col justify-center items-center mt-[18%] bg-white'>
+    <div className='w-full h-full flex flex-col justify-center align-center items-center mt-[15%] bg-white overflow-y-auto'>
       <div>
-        <p className=' text-2xl font-semibold text-gray-700 text-center mb-4'>
+        <p className=' text-2xl font-semibold text-gray-700 text-center mb-4 overflow-y-auto'>
           Ask a Research Question
         </p>
       </div>
-      <div className='flex w-[50%] min-w-[300pt]'>
-        <form onSubmit={handleSubmit} className='w-full'>
+      <div className='flex flex-auto w-[50%] min-w-[300pt]'>
+        <form onSubmit={handleSubmit} className='w-full overflow-y-clip'>
           <TextArea 
             currentPrompt={currentPrompt} 
             setCurrentPrompt={setCurrentPrompt} 

@@ -7,7 +7,7 @@ import { AuthProvider } from './api/auth_context';
 
 function MainContent() {
   return (
-    <div className='flex overflow-hidden'>
+    <div className='flex h-full overflow-hidden'>
       <div className='w-full h-full p-4'>
         <Input />
       </div>

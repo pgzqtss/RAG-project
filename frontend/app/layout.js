@@ -15,8 +15,8 @@ export default function Layout({ children }) {
   const toggleSignupOpen = () => setSignupOpen(!isSignupOpen);
 
   return (
-    <html lang='en' className='h-screen'>
-      <body>
+    <html lang='en'>
+      <body className='h-screen'>
         <AuthProvider>
           <div className="flex flex-row">
             <div className={`transition-all duration-300 ${isCollapsed ? 'w-16' : 'min-w-[200pt]'}`}>
@@ -25,14 +25,16 @@ export default function Layout({ children }) {
                 toggleIsCollapsed={toggleIsCollapsed} 
               />
             </div>
-            <div className="flex flex-col h-screen w-full bg-white p-4">
+            <div className="flex flex-col h-screen justify-center w-full bg-white p-4">
               <Header 
                 toggleLoginOpen={toggleLoginOpen} 
                 isLoginOpen={isLoginOpen}
                 toggleSignupOpen={toggleSignupOpen}
                 isSignupOpen={isSignupOpen} 
               />
-              <main>{children}</main>
+              <div className="flex flex-grow justify-center overflow-hidden">
+                <main>{children}</main>
+              </div>
             </div>
           </div>
         </AuthProvider>

@@ -10,7 +10,7 @@ export default function Input() {
   };
 
   return (
-    <div className='bg-white overflow-y-auto'>
+    <div className='h-full bg-white overflow-hidden'>
       <InputSection
         currentPrompt={currentPrompt}
         setCurrentPrompt={setCurrentPrompt}

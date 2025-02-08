@@ -24,26 +24,23 @@ export default function InputSection({ currentPrompt, setCurrentPrompt, isAttach
 
 
   return (
-    <div className='w-full h-full flex flex-col justify-center align-center items-center mt-[250px] bg-white overflow-y-auto'>
-      <div>
-        <p className=' text-2xl font-semibold text-gray-700 text-center mb-4 overflow-y-auto'>
+    <div className='w-full h-full flex flex-col justify-center items-center bg-white overflow-hidden'>
+      <div className='flex flex-col justify-center items-center w-full'>
+        <p className='text-2xl font-semibold text-gray-700 text-center mb-4'>
           Ask a Research Question
         </p>
-      </div>
-      <div className='flex flex-auto w-[50%] min-w-[300pt]'>
-        <form onSubmit={handleSubmit} className='w-full overflow-y-clip'>
-          <TextArea 
-            currentPrompt={currentPrompt} 
-            setCurrentPrompt={setCurrentPrompt} 
-            isAttachOpen={isAttachOpen}
-            toggleAttachOpen={toggleAttachOpen}
-            isInputEmpty={isInputEmpty}
-            id={id}
-          />
-          {/* <SubmitButton 
-            isInputEmpty={isInputEmpty}
-          /> */}
-        </form>
+        <div className='flex flex-auto w-[500pt] min-w-[300pt] max-w-[500pt] mb-[20%]'>
+          <form onSubmit={handleSubmit} className='flex flex-grow w-full'>
+            <TextArea 
+              currentPrompt={currentPrompt} 
+              setCurrentPrompt={setCurrentPrompt} 
+              isAttachOpen={isAttachOpen}
+              toggleAttachOpen={toggleAttachOpen}
+              isInputEmpty={isInputEmpty}
+              id={id}
+            />
+          </form>
+        </div>
       </div>
     </div>
   );

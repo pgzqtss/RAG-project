@@ -1,7 +1,7 @@
 export default function Home() {
   return (
     <div className='w-full h-full flex flex-col items-center justify-center'>
-      <img src='rag-icon.png' alt='RAG Icon' height='256' width='256' className='m-4'></img>
+      <img src='rag-icon.png' alt='RAG Icon' height='200' width='200' className='m-4'></img>
       <div className='flex w-full font-bold text-3xl justify-center'>
         Welcome to Rag-n-Bones
       </div>

@@ -6,48 +6,69 @@ Rag-n-Bones is a web application that uses an input of PDFs to generate systemat
 ### Prerequisites
 - Latest version of `pip` is installed
 
+- `MySQL` installed (database)
+- `Node.js` and `npm` installed (frontend)
+
 ### Instructions
-1. Clone the repository:
+### 1. Clone the repository:
 ```
 ~ git clone https://github.com/pgzqtss/RAG-project.git
-```
-
-2. Install all necessary python libraries:
-```
-~ pip install -r requirements.txt
-```
-
-3. Create a `.env` file in the root directory using `.env.environment` as a template.
-
-    | Environment Variable | Description | Source
-    | ----------- | ----------- | ---------- |
-    | PINECONE_API_KEY | API key for using Pinecone as a vector database | <a href='https://www.pinecone.io'> Pinecone <a/> |
-    | OPENAI_API_KEY | API key for use of OpenAI's GPT 3.5 Turbo model | <a href='https://platform.openai.com/docs/overview'> OpenAI API Platform <a/>
-
-4. Run `upload_pdfs.py` to upload test PDFs to the Pinecone database: (Creates vectors for LLM use)
-```
-~ python3 backend/upload_pdfs.py
-```
-
-5. Run `pipeline.py`: (Generates systematic review based on example prompt)
-```
-~ python3 backend/pipeline.py
-```
-
-## Testing Instructions
-
-Testing of systematic review generation is done using mocks, therefore there are no actual API calls done during tests.
-
-### Prerequisites
-- Latest version of `pytest` library is installed 
-
-### Instructions
-1. Change to the root directory:
-```
 ~ cd RAG-project
 ```
 
-2. Run all tests in the backend folder:
+### 2. Install all dependencies:
+
+#### Backend
 ```
-~ pytest backend
+~ cd backend
+~ pip install -r requirements.txt
 ```
+
+#### Frontend
+```
+~ cd frontend
+~ npm install
+```
+
+### 3. Create a `.env` file in the root directory using `.env.environment` as a template.
+
+| Environment Variable | Description | Source
+| ----------- | ----------- | ---------- |
+| PINECONE_API_KEY | API key for using Pinecone as a vector database | <a href='https://www.pinecone.io'> Pinecone <a/> |
+| PINECONE_INDEX_NAME | Name of an index to store and read from all vectors | ^| 
+| OPENAI_API_KEY | API key for use of OpenAI's GPT 3.5 Turbo model | <a href='https://platform.openai.com/docs/overview'> OpenAI API Platform <a/>
+| MYSQL_PASSWORD | Personal password for MySQL database (empty if none) | |
+    
+
+### 4. Start MySQL server
+
+#### Mac
+```
+~ brew services start mysql
+```
+
+#### Windows
+```
+~ net start mysql
+```
+
+### 5. Create the MySQL database
+```
+~ cd backend
+~ mysql -u root -p < schema.sql
+```
+
+### 6. Run the backend
+```
+~ cd backend
+~ python3 app.py
+```
+
+### 7. Run the frontend
+```
+~ cd frontend
+~ npm run dev
+```
+
+The Next.js app will run on <a href='http:/localhost:3000'>http://localhost:3000</a>
+

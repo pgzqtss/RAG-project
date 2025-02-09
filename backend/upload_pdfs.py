@@ -74,6 +74,7 @@ def split_data(namespaces):
 # List of PDF file paths (group them for different namespaces)
 if __name__ == "__main__":
     namespaces = {
+
         "P1.1": [r"backend\papers\P1.1.pdf"],
         "P1.2": [r"backend\papers\P1.2.pdf"],
         "P1.3": [r"backend\papers\P1.3.pdf"],
@@ -93,6 +94,7 @@ if __name__ == "__main__":
         "paper1": [r"backend\papers\paper1.pdf"],
         "paper2": [r"backend\papers\paper2.pdf"],
         "paper3": [r"backend\papers\paper3.pdf"],
+
     }
 
     # Initialize Pinecone

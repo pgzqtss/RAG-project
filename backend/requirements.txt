@@ -1,0 +1,16 @@
+python-dotenv
+pinecone
+openai
+langchain
+langchain-community
+langchain-openai
+lxml
+pytest
+pandas
+transformers
+tf-keras
+flask
+flask-cors
+bcrypt
+mysql-connector-python
+pypdf

@@ -1,11 +1,27 @@
+# Environment Variables
 python-dotenv
+
+# Vector Database
 pinecone
+
+# LLM Models and API Access
 openai
+together
 langchain
 langchain-community
 langchain-openai
-lxml
-pytest
+
+# Data Processing
 pandas
+lxml
+
+# Machine Learning & NLP
 transformers
 tf-keras
+
+# PDF Processing
+pymupdf
+
+# Miscellaneous
+pytest
+tqdm

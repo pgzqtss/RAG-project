@@ -4,5 +4,6 @@ __pycache__
 
 .vscode
 
-frontend/files
+/frontend/files
+/files
 

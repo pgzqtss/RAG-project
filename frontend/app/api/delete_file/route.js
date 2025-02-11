@@ -13,7 +13,7 @@ export async function POST(req) {
       return NextResponse.json({ status: 'Fail', error: 'No file name received' }, { status: 400 });
     }
 
-    const deleteDir = path.join(process.cwd(), 'files', id);
+    const deleteDir = path.join(process.cwd(),'..', 'files', id);
     const filePath = path.join(deleteDir, file);
     await fs.unlink(filePath);
     

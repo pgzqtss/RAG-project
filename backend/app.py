@@ -450,6 +450,27 @@ def query_user():
         cursor.close()
         conn.close()
         
+@app.route('/api/query_user_history', methods=['POST'])
+def query_user_history():
+    data = request.json
+    user_id = data.get('user_id')
+
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'SELECT prompt_id, user_input FROM history WHERE user_id = %s',
+            (user_id,)
+        )
+        result = cursor.fetchall()
+        print(f'WTF: {result}')
+        return jsonify({'message': 'Found user history successfully',
+                        'result': result}), 200
+    except:
+        return jsonify({'error': 'No user history found'}), 404
+    finally:
+        cursor.close()
+        conn.close()
 
 # @app.route('/query', methods=['POST'])
 # def query():

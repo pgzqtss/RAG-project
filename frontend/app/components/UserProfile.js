@@ -28,8 +28,8 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignup
             </div>
           </button>
           {isMenuOpen && (
-            <div className='absolute right-0 z-10 mt-[80pt] mr-4 w-48 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden hover:bg-gray-50'>
-              <div className='py-1'>
+            <div className='absolute right-0 z-10 mt-[80pt] mr-4 w-48 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden'>
+              <div className='py-1 hover:bg-gray-50'>
                 <button
                   type='button'
                   onClick={logout}

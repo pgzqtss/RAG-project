@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import fetchFiles from '../api/fetch_files_api';
 import { deleteFile } from '../actions/delete_file';
 

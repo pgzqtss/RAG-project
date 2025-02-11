@@ -459,15 +459,37 @@ def query_user_history():
     cursor = conn.cursor()
     try:
         cursor.execute(
-            'SELECT prompt_id, user_input FROM history WHERE user_id = %s',
+            'SELECT prompt_id, user_input FROM history WHERE user_id = %s ORDER BY created_at DESC',
             (user_id,)
         )
         result = cursor.fetchall()
-        print(f'WTF: {result}')
         return jsonify({'message': 'Found user history successfully',
                         'result': result}), 200
     except:
         return jsonify({'error': 'No user history found'}), 404
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/delete_user_history', methods=['POST'])
+def delete_user_history():
+    data = request.json
+    prompt_id = data.get('prompt_id')
+
+    conn = connect_to_database()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'DELETE FROM history WHERE prompt_id = %s',
+            (prompt_id,)
+        )
+        conn.commit()
+        result = cursor.fetchall()
+        print(f'WTF: {result}')
+        return jsonify({'message': 'Systematic review successfully',
+                        'result': result}), 200
+    except:
+        return jsonify({'error': 'No systematic review found'}), 404
     finally:
         cursor.close()
         conn.close()

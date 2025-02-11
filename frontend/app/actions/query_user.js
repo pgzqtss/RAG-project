@@ -3,7 +3,6 @@ import { queryUser } from '../api/query_user_api';
 export async function queryID(username) {
   try {
       const response = await queryUser(username);
-      console.log(response)
   
       if (response.error) {
         return {

@@ -1,24 +1,41 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { queryUsersHistory } from '../actions/query_user_history';
 import { useAuth } from '../api/auth_context';
 import { queryID } from '../actions/query_user';
+import { redirect } from 'next/navigation';
+import { deleteUsersHistory } from '../actions/delete_user_history';
+import { usePathname } from 'next/navigation';
+
 
 export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
   const { user, login } = useAuth();
   const [history, setHistory] = useState([]);
   const [refresh, setRefresh] = useState(false);
   const [hoveredPrompt, setHoveredPrompt] = useState(null);
-  const [editOpenPromptId, setEditOpenPromptId] = useState(null); // Track which prompt's edit menu is open
+  const [editOpenPromptId, setEditOpenPromptId] = useState(null);
+  const currentUrl = usePathname();
 
   const toggleHover = (prompt_id) => {
     setHoveredPrompt(prompt_id);
   };
 
-  const toggleEditMenu = (prompt_id) => {
+  const toggleEditMenu = (prompt_id, event) => {
+    event.stopPropagation();
     setEditOpenPromptId(editOpenPromptId === prompt_id ? null : prompt_id);
   };
 
-  function refreshFiles() {
+  const delete_history = async (prompt_id, refreshHistory, event) => {
+    event.stopPropagation();
+    const promptUrl = `/${prompt_id}`;
+
+    deleteUsersHistory(prompt_id, refreshHistory)
+
+    if (currentUrl === promptUrl) {
+      redirect('/');
+    }
+  }
+
+  function refreshHistory() {
     setRefresh(!refresh);
   }
 
@@ -52,60 +69,64 @@ export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
       </div>
       {!isCollapsed && (
         <div className='w-full'>
-          <div className='border-b-2'>
-            <button
-              type='button'
-              className='w-full flex justify-center align-middle items-center gap-x-2 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 shadow-sm mb-4'
-              onClick={() => window.location.href = '/'}
-            >
-              <img src='pen-to-square.svg' alt='Pen To Square Icon' height='26' width='26'/>
-              <div className='pt-1 text-md text-gray-700 '>
-                New Systematic Review
-              </div>
-            </button>
-          </div>
+          <button
+            type='button'
+            className='w-full flex justify-center align-middle items-center gap-x-2 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 shadow-sm mb-4'
+            onClick={() => window.location.href = '/'}
+          >
+            <img src='pen-to-square.svg' alt='Pen To Square Icon' height='26' width='26'/>
+            <div className='pt-1 text-md text-gray-700 '>
+              New Systematic Review
+            </div>
+          </button>
           {history.length > 0 && (
-            <div className='mt-2'>
-              <ul>
-                {history.map(([prompt_id, user_input]) => (
-                  <li key={prompt_id}>
-                    <div
-                      className='flex items-center justify-between p-2 hover:bg-gray-200 hover:rounded-xl'
-                      onMouseEnter={() => toggleHover(prompt_id)}
-                      onMouseLeave={() => { toggleHover(null); setEditOpenPromptId(null); }}
-                    >
-                      <span className='block w-full truncate'>
-                        {user_input}
-                      </span>
-                      {hoveredPrompt === prompt_id && (
-                        <div className='relative inline-block'>
-                          <div
-                            className='hover:bg-gray-300 hover:rounded-full'
-                            onClick={() => toggleEditMenu(prompt_id)}
-                          >
-                            <img src='ellipsis.svg' alt='Close Icon' height='20' width='20' className='flex-shrink-0 px-[2px] py-[1px] mr-[2px]' />
-                          </div>
-                          {editOpenPromptId === prompt_id && (
+            <div className='border-t-2'>
+              <div className='mt-2'>
+                <ul>
+                  {history.map(([prompt_id, user_input]) => (
+                    <li key={prompt_id}>
+                      <div
+                        className='flex items-center justify-between p-2 hover:bg-gray-200 hover:rounded-xl cursor-pointer'
+                        onMouseEnter={() => toggleHover(prompt_id)}
+                        onMouseLeave={() => { toggleHover(null); setEditOpenPromptId(null); }}
+                        onClick={() => redirect(`/${prompt_id}`)}
+                      >
+                        <span className='block w-full truncate'>
+                          {user_input}
+                        </span>
+                        {hoveredPrompt === prompt_id && (
+                          <div className='relative inline-block'>
                             <div
-                              className="absolute left-0 transform -translate-x-1 mt-2 rounded-md w-48 border z-50 bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden"
-                              onMouseLeave={() => setEditOpenPromptId(null)}
+                              className='hover:bg-gray-300 hover:rounded-full'
+                              onClick={(event) => toggleEditMenu(prompt_id, event)} // Pass event and stop propagation
                             >
-                              <div className='py-1'>
-                                <button className="block w-full px-4 py-2 text-left text-sm text-gray-700 border-b-2 hover:bg-gray-50">
-                                  Change Name
-                                </button>
-                                <button className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
-                                  Delete
-                                </button>
-                              </div>
+                              <img src='ellipsis.svg' alt='Close Icon' height='20' width='20' className='flex-shrink-0 px-[2px] py-[1px] mr-[2px]' />
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                            {editOpenPromptId === prompt_id && (
+                              <div
+                                className='absolute left-0 transform -translate-x-1 mt-2 rounded-md w-48 border z-50 bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden'
+                                onMouseLeave={() => setEditOpenPromptId(null)}
+                              >
+                                <div className='py-1'>
+                                  <button className='block w-full px-4 py-2 text-left text-sm text-gray-700 border-b-2 hover:bg-gray-50'>
+                                    Change Name
+                                  </button>
+                                  <button 
+                                    className='block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50'
+                                    onClick={(event) => delete_history(prompt_id, refreshHistory, event)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
         </div>

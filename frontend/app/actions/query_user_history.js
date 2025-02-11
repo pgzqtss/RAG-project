@@ -3,7 +3,6 @@ import { queryUserHistory } from '../api/query_user_history_api';
 export async function queryUsersHistory(user_id) {
   try {
       const response = await queryUserHistory(user_id);
-      console.log(response)
   
       if (response.error) {
         return {

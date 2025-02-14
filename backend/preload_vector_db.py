@@ -1,46 +1,33 @@
+import os
+from tqdm import tqdm
 from process_pdf import pdf_to_text, split_text_into_chunks
 from store_to_pinecone import store_chunks_in_pinecone
-from initialize_pinecone import initialize_pinecone
-from tqdm import tqdm
-import os
 
-def preload_research_papers():
-    """ Preloads a set of research papers into Pinecone. """
-    initialize_pinecone()  # Ensure Pinecone is initialized
+def preload_research_papers(directory="backend/preload_papers"):
+    """Process and store preloaded research papers into Pinecone."""
 
-    preloaded_papers = {
-        "P1.1": [r"backend\papers\P1.1.pdf"],
-        "P1.2": [r"backend\papers\P1.2.pdf"],
-        "P1.3": [r"backend\papers\P1.3.pdf"],
-        "P2.1": [r"backend\papers\P2.1.pdf"],
-        "P2.2": [r"backend\papers\P2.2.pdf"],
-        "P2.3": [r"backend\papers\P2.3.pdf"],
-        "P2.4": [r"backend\papers\P2.4.pdf"],
-        "P2.5": [r"backend\papers\P2.5.pdf"],
-        "P3.1": [r"backend\papers\P3.1.pdf"],
-        "P3.2": [r"backend\papers\P3.2.pdf"],
-        "P3.3": [r"backend\papers\P3.3.pdf"],
-        "P3.4": [r"backend\papers\P3.4.pdf"],
-        "P3.5": [r"backend\papers\P3.5.pdf"],
-        "S1": [r"backend\papers\S1.pdf"],
-        "S2": [r"backend\papers\S2.pdf"],
-        "S3": [r"backend\papers\S3.pdf"],
-        "paper1": [r"backend\papers\paper1.pdf"],
-        "paper2": [r"backend\papers\paper2.pdf"],
-        "paper3": [r"backend\papers\paper3.pdf"],
-    }
+    if not os.path.exists(directory):
+        print(f"⚠️ Directory '{directory}' not found.")
+        return
 
-    for paper_name, pdf_paths in tqdm(preloaded_papers.items(), desc="Preloading Papers"):
-        for pdf_path in pdf_paths:
-            if not os.path.exists(pdf_path):
-                print(f"Skipping {pdf_path} (file not found).")
-                continue
+    pdf_files = [f for f in os.listdir(directory) if f.endswith(".pdf")]
 
-            text = pdf_to_text(pdf_path)
-            chunks = split_text_into_chunks(text)
-            store_chunks_in_pinecone(chunks, namespace=paper_name)
+    if not pdf_files:
+        print("⚠️ No preloaded PDFs found.")
+        return
 
-    print("✅ Preloading complete!")
+    for pdf_file in tqdm(pdf_files, desc="Preloading Papers"):
+        pdf_path = os.path.join(directory, pdf_file)
+        paper_name = pdf_file.replace(".pdf", "")  # Use filename as paper ID
+
+        print(f"📄 Extracting text from {pdf_file}...")
+        text = pdf_to_text(pdf_path)
+        classified_chunks = split_text_into_chunks(text)  # Returns classified sections
+
+        print(f"📦 Storing {len(classified_chunks)} chunks in Pinecone under '{paper_name}'...")
+        store_chunks_in_pinecone(classified_chunks, paper_id=paper_name)  # ✅ Fixed Argument
+
+    print("✅ Preloaded all research papers into Pinecone.")
 
 if __name__ == "__main__":
     preload_research_papers()

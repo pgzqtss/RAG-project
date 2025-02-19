@@ -1,10 +1,13 @@
-export default function SystematicReview({ prompt, text }) {
+import ShowFiles from './ShowFiles';
+
+export default function SystematicReview({ prompt, text, id }) {
   return (
-    <div className='flex flex-col items-center justify-center w-full h-[calc(100vh-100px)] p-4'> 
+    <div className='flex flex-col items-center justify-center w-full h-full p-4'> 
       <div className='font-bold text-2xl text-center mb-4'>
         {prompt}
       </div>
-      <div className='w-[700px] h-full  bg-gray-50 rounded-3xl overflow-auto'>
+      <ShowFiles id={id} />
+      <div className='w-[700px] h-full flex-grow bg-gray-50 rounded-3xl overflow-auto'>
         <div className='text-xl p-4'>
           {text}
         </div>
@@ -12,3 +15,5 @@ export default function SystematicReview({ prompt, text }) {
     </div>
   );
 }
+
+{/* <a href={`/files/${id}/${file}`} target='_blank' rel='noopener noreferrer'></a> */}

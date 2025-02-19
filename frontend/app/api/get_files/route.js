@@ -7,9 +7,13 @@ export async function POST(req) {
   try {
     const formData = await req.formData();
     const id = formData.get('id');
+    console.log('BITCH')
+    console.log(id)
 
     const readDir = path.join(process.cwd(), 'files', id);
     const files = fs.readdirSync(readDir);
+    console.log('FACKYOU')
+    console.log(readDir)
 
     if (files.length === 0) {
       return NextResponse.json({status: 'Null', error: 'No files in the directory'}, {status: 400});

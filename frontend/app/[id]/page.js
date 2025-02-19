@@ -20,8 +20,8 @@ export default function Page({ params }) {
   const [isGenerateLoading, setGenerateLoading] = useState(false);
   const [displayText, setDisplayText] = useState(false);
   const [generate, setGenerate] = useState(false);
-  const [input, setInput] = useState('')
-  const [output, setOutput] = useState('')
+  const [input, setInput] = useState('');
+  const [output, setOutput] = useState('');
 
   const toggleUpdate = () => setGenerate(prev => !prev);
   
@@ -67,10 +67,10 @@ export default function Page({ params }) {
   }, [generate]);
 
   return (
-    <div className='flex h-full overflow-hidden'>
+    <div className='flex flex-col h-full overflow-hidden'>
       {isUpsertLoading && <Loading message='Upserting Vectors' />}
       {isGenerateLoading && <Loading message='Generating Systematic Review' />}
-      {displayText && <SystematicReview prompt={input} text={output} />}
+      {displayText && <SystematicReview prompt={input} text={output} id={id} />}
     </div>
   );
 }

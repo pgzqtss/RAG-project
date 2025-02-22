@@ -1,35 +1,43 @@
-import os
 import json
-from tqdm import tqdm
-from langchain_openai import ChatOpenAI
-import dotenv
+import os
+import re
 import textwrap
+
+import dotenv
+import fitz  # PyMuPDF for PDF processing
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from pinecone import Pinecone, ServerlessSpec
 from sentence_transformers import SentenceTransformer, util
-import torch
+from tqdm import tqdm
 
 # ✅ Load environment variables
 dotenv.load_dotenv()
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+PINECONE_INDEX_NAME = os.get('PINECONE_INDEX_NAME')
 
 # ✅ Define directories
-INDEX_NAME = "fuck"
-USER_PAPERS_DIR = "backend/user_uploads"
-OUTPUT_DIR = "backend/processed_texts"
-OUTPUT_PATH = os.path.join(OUTPUT_DIR, "systematic_review.json")
+USER_PAPERS_DIR = 'backend/user_uploads'
+OUTPUT_DIR = 'backend/processed_texts'
+OUTPUT_PATH = os.path.join(OUTPUT_DIR, 'systematic_review.json')
 
-# ✅ Ensure directories exist
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+SEARCH_METRIC = 'cosine'
+SPEC_CLOUD = 'aws'
+SPEC_REGION = 'us-east-1'
+VECTOR_DIMENSION = 1536  # OpenAI Embeddings dimension
 
-# ✅ Initialize LLM model
-model = ChatOpenAI(api_key=OPENAI_API_KEY,
+pinecone = Pinecone(api_key=PINECONE_API_KEY)
+index = pinecone.Index(PINECONE_INDEX_NAME)
+embeddings = OpenAIEmbeddings(OPENAI_API_KEY)
+model = ChatOpenAI(api_key=os.getenv('OPENAI_API_KEY'), 
                    model='gpt-3.5-turbo',
                    temperature=0)
 
-def generate_background_section(results, query, model, chunk_size=5):
-    """单独生成 Background 章节"""
-    section_title = "Background"
-    section_prompt = textwrap.dedent(f"""
+def generate_background_section(results, query, chunk_size, previous_sections):
+    '''单独生成 Background 章节'''
+    section_title = 'Background'
+    section_prompt = textwrap.dedent(f'''
         {section_title}
                                         
         Generate the {section_title} section for the systematic review using the relevant information from the retrieved documents. 
@@ -57,15 +65,23 @@ def generate_background_section(results, query, model, chunk_size=5):
         ✅ Address conflicting information from different sources, providing analysis or explanation
         ✅ Focus on depth and relevance—highlight the most pertinent findings
         ✅ Adapt the depth of each section based on the relevance and strength of the retrieved evidence
-    """).strip()
-    return generate_section(results, query, model, section_title, section_prompt, chunk_size)
-
-
-def generate_methods_section(results, query, model, chunk_size=5):
-    """Generate the Methods section for a Systematic Review following PRISMA guidelines."""
+    ''').strip()
     
-    section_title = "Methods"
-    section_prompt = textwrap.dedent(f"""
+    return generate_section(
+        results=results,
+        query=query,
+        section_title=section_title,
+        section_prompt=section_prompt,
+        chunk_size=chunk_size,
+        previous_sections=previous_sections
+    )
+
+
+def generate_methods_section(results, query, chunk_size, previous_sections):
+    '''Generate the Methods section for a Systematic Review following PRISMA guidelines.'''
+    
+    section_title = 'Methods'
+    section_prompt = textwrap.dedent(f'''
         {section_title}
                                      
         Generate the {section_title} section for the Systematic Review using relevant information retrieved through a RAG system. 
@@ -93,16 +109,23 @@ def generate_methods_section(results, query, model, chunk_size=5):
         ✅ Clear, structured, and evidence-informed
         ✅ No citations required—focus on summarizing key points
         ✅ Present insights logically, highlighting relevance to the research query  
-    """).strip()
+    ''').strip()
 
-    return generate_section(results, query, model, section_title, section_prompt, chunk_size)
+    return generate_section(
+        results=results,
+        query=query,
+        section_title=section_title,
+        section_prompt=section_prompt,
+        chunk_size=chunk_size,
+        previous_sections=previous_sections
+    )
 
 
-def generate_results_section(results, query, model, chunk_size=5):
-    """Generate the Results section for a Systematic Review."""
+def generate_results_section(results, query, chunk_size, previous_sections):
+    '''Generate the Results section for a Systematic Review.'''
 
-    section_title = "Results"
-    section_prompt = textwrap.dedent(f"""
+    section_title = 'Results'
+    section_prompt = textwrap.dedent(f'''
         {section_title}                             
 
         Generate the {section_title} section for the Systematic Review using relevant information retrieved through a RAG system. Structure the content logically and focus on summarizing the key findings from the retrieved information.
@@ -126,16 +149,23 @@ def generate_results_section(results, query, model, chunk_size=5):
         ✅ Focused on clear, unbiased summaries
         ✅ Only present information directly supported by retrieved content
         ✅ Flexible structure, prioritizing relevance over strict formatting
-    """).strip()
+    ''').strip()
 
-    return generate_section(results, query, model, section_title, section_prompt, chunk_size)
+    return generate_section(
+        results=results,
+        query=query,
+        section_title=section_title,
+        section_prompt=section_prompt,
+        chunk_size=chunk_size,
+        previous_sections=previous_sections
+    )
 
 
-def generate_discussion_section(results, query, model, chunk_size=5):
-    """Generate the Discussion section for a Systematic Review."""
+def generate_discussion_section(results, query, chunk_size, previous_sections):
+    '''Generate the Discussion section for a Systematic Review.'''
 
-    section_title = "Discussion"
-    section_prompt = textwrap.dedent(f"""
+    section_title = 'Discussion'
+    section_prompt = textwrap.dedent(f'''
         {section_title}
 
         Generate the {section_title} section for the Systematic Review using relevant information retrieved through a RAG system. 
@@ -161,16 +191,23 @@ def generate_discussion_section(results, query, model, chunk_size=5):
         ✅ Acknowledge conflicting evidence without resolving it
         ✅ Use cautious, evidence-based language (e.g., “may suggest,” “potentially indicates”)
         ✅ Clearly state when information is incomplete or lacking depth 
-    """).strip()
+    ''').strip()
 
-    return generate_section(results, query, model, section_title, section_prompt, chunk_size)
+    return generate_section(
+        results=results,
+        query=query,
+        section_title=section_title,
+        section_prompt=section_prompt,
+        chunk_size=chunk_size,
+        previous_sections=previous_sections
+    )
 
 
-def generate_conclusion_section(results, query, model, chunk_size=5):
-    """Generate the Conclusion section for a Systematic Review."""
+def generate_conclusion_section(results, query, chunk_size, previous_sections):
+    '''Generate the Conclusion section for a Systematic Review.'''
 
-    section_title = "Conclusion"
-    section_prompt = textwrap.dedent(f"""
+    section_title = 'Conclusion'
+    section_prompt = textwrap.dedent(f'''
         {section_title}
 
         Generate the {section_title} section for a Systematic Review using the following structure and guidelines:
@@ -183,10 +220,10 @@ def generate_conclusion_section(results, query, model, chunk_size=5):
         2.  Clinical & Public Health Implications:
             •   Highlight practical implications for healthcare practice or policy, based on the retrieved evidence.
             •   Clearly state limitations and uncertainties to avoid overgeneralization.
-            •   Use cautious language (e.g., "may suggest," "could potentially") when discussing implications that are not definitively supported by the evidence.
+            •   Use cautious language (e.g., 'may suggest,' 'could potentially') when discussing implications that are not definitively supported by the evidence.
         3.  Final Recommendations:
             •   Propose specific, actionable next steps for research or practice, addressing gaps or limitations identified in the retrieved evidence.
-            •   Avoid generic statements like "more research is needed"—instead, specify the type of research or areas requiring further investigation.
+            •   Avoid generic statements like 'more research is needed'—instead, specify the type of research or areas requiring further investigation.
             •   Ensure recommendations are grounded in the findings and directly linked to the retrieved data.
         🔹 Writing Style:
 
@@ -194,9 +231,16 @@ def generate_conclusion_section(results, query, model, chunk_size=5):
         ✅ Structured and logical: Ensure a clear flow from summary to implications to recommendations.
         ✅ Cautious and balanced: Acknowledge limitations and avoid overstating results.
         ✅ Actionable and specific: Provide tailored recommendations that are practical and relevant to stakeholders.
-    """).strip()
+    ''').strip()
 
-    return generate_section(results, query, model, section_title, section_prompt, chunk_size)
+    return generate_section(
+        results=results,
+        query=query,
+        section_title=section_title,
+        section_prompt=section_prompt,
+        chunk_size=chunk_size,
+        previous_sections=previous_sections
+    )
 
 
 
@@ -205,16 +249,16 @@ bert_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Define length constraints for different sections
 section_length_limits = {
-    "Background": 1200,  # 800-1200 words
-    "Methods": 1500,  # 1000-1500 words
-    "Results": 2500,  # 1500-2500 words
-    "Discussion": 3000,  # 2000-3000 words
-    "Conclusion": 600,  # 300-600 words
+    'Background': 1200,  # 800-1200 words
+    'Methods': 1500,  # 1000-1500 words
+    'Results': 2500,  # 1500-2500 words
+    'Discussion': 3000,  # 2000-3000 words
+    'Conclusion': 600,  # 300-600 words
 }
 
-def generate_section(results, query, model, section_title, section_prompt, 
+def generate_section(results, query, section_title, section_prompt, 
                      previous_sections=None, chunk_size=30, similarity_threshold=0.8):
-    """
+    '''
     Generates a **Systematic Review** section with:
     - **Context awareness** (previously generated sections as input)
     - **De-duplication** (removes redundant content using BERT-based similarity checking)
@@ -230,28 +274,28 @@ def generate_section(results, query, model, section_title, section_prompt,
     - previous_sections: Previously generated sections (to enhance continuity)
     - chunk_size: Number of data chunks to use for context
     - similarity_threshold: Sentence similarity threshold for de-duplication
-    """
+    '''
 
     seen_sentences = set()  # Store unique sentences
 
     # 🔥 Ensure `previous_sections` is always a list
     if not isinstance(previous_sections, list):  
-        previous_sections = []  # 强制转换为空列表，确保不会出错
+        previous_sections = []  # Force conversion to an empty list to ensure no errors
 
     # Retrieve the max length for this section
     max_length = section_length_limits.get(section_title, 1500)  # Default to 1500 words if unspecified
 
     # 1️⃣ **Context Expansion** (Use both research data and previously generated sections)
-    context_data = "\n\n".join(results[:chunk_size]) if results else ""
+    context_data = '\n\n'.join(results[:chunk_size]) if results else ''
 
-    # 🔥 防止 `join()` 报错，确保 previous_sections 是 list 并且不包含非字符串元素
-    previous_content = "\n\n".join(str(s) for s in previous_sections) if previous_sections else ""
+    # 🔥 Prevent `join()` from throwing errors by ensuring previous_sections is a list and does not contain non-string elements
+    previous_content = '\n\n'.join(str(s) for s in previous_sections) if previous_sections else ''
 
     if previous_content:
-        context_data = previous_content + "\n\n" + context_data  # Append previous sections for better flow
+        context_data = previous_content + '\n\n' + context_data  # Append previous sections for better flow
 
     # 2️⃣ **Construct the Prompt**
-    prompt = textwrap.dedent(f"""
+    prompt = textwrap.dedent(f'''
     **Revised Systematic Review Writing Prompt**
 
     # 📚 **Systematic Review Writing Task: {section_title}**
@@ -295,27 +339,26 @@ def generate_section(results, query, model, section_title, section_prompt,
     ## 📝 **Now, generate the full {section_title} section:**
 
 
-    """)
+    ''')
 
     try:
-        # 3️⃣ **AI Generates the Text**
         response = model.invoke(prompt).content if model else None
 
         # 🔥 **Check if response is None**
         if response is None or not isinstance(response, str):
-            raise ValueError(f"AI model did not return a valid response for {section_title}")
+            raise ValueError(f'AI model did not return a valid response for {section_title}')
 
         response = response.strip()
 
         # 🔥 **Check if response is empty**
         if not response:
-            raise ValueError(f"Generated response is empty for {section_title}")
+            raise ValueError(f'Generated response is empty for {section_title}')
 
         # Limit the text length based on the predefined constraints
         response = response[:max_length * 6]  # Approximate conversion: 1 word ≈ 6 characters
         
         # 4️⃣ **Deduplication Logic**
-        generated_sentences = response.split("\n")
+        generated_sentences = response.split('\n')
         unique_sentences = []
 
         for sentence in generated_sentences:
@@ -339,7 +382,7 @@ def generate_section(results, query, model, section_title, section_prompt,
             if similarity_scores < similarity_threshold:
                 filtered_sentences.append(sentence)
 
-        final_section = "\n".join(filtered_sentences)  # Return the final cleaned section
+        final_section = '\n'.join(filtered_sentences)  # Return the final cleaned section
         
         # ✅ **Append the generated section to previous_sections for future use**
         previous_sections.append(final_section)
@@ -347,161 +390,148 @@ def generate_section(results, query, model, section_title, section_prompt,
         return final_section
 
     except ValueError as ve:
-        print(f"⚠️ ValueError in {section_title}: {ve}")
-        return ""
+        print(f'⚠️ ValueError in {section_title}: {ve}')
+        return ''
     except Exception as e:
-        print(f"⚠️ Unexpected error in {section_title}: {e}")
-        return ""
+        print(f'⚠️ Unexpected error in {section_title}: {e}')
+        return ''
 
+def _get_fixed_limit_previous_sections(systematic_review, section_char_limit):
+    previous_sections = []
 
+    # Iterate through the sections in the order they were generated
+    for section_title, section_content in systematic_review.items():
+        section_content_str = str(section_content)  # Ensure content is a string
+        # Truncate the section to the first `section_char_limit` characters
+        truncated_section = section_content_str[:section_char_limit]
+        previous_sections.append(truncated_section)
 
+    return previous_sections
 
 def generate_full_systematic_review(query, model):
-    """逐步生成 Systematic Review 的不同章节，每个章节独立处理"""
+    """Generate different sections of a Systematic Review step by step, each section processed independently"""
 
-    paper_ids = get_all_paper_ids()  # ✅ 获取所有存储的论文 ID
-    systematic_review = {}
+    paper_ids = get_all_paper_ids()  # ✅ Get all stored paper IDs
+    systematic_review = {}  # Dictionary to store all generated sections
 
-    print("🔍 生成 Background 章节...")
+    # Define the character limit for each section (e.g., 2000 characters per section)
+    section_char_limit = 2000
+
+    print("🔍 Generating Background section...")
     background_results = search_pinecone_with_fallback(query, paper_ids=paper_ids, section="Background", top_k=50)
-    systematic_review["Background"] = generate_background_section(background_results, query, model)
+    systematic_review["Background"] = generate_background_section(
+        results=background_results,
+        query=query,
+        chunk_size=30,
+        previous_sections=[]
+    )
 
-    print("🔍 生成 Methods 章节...")
+    print("🔍 Generating Methods section...")
     methods_results = search_pinecone_with_fallback(query, paper_ids=paper_ids, section="Methods", top_k=50)
-    systematic_review["Methods"] = generate_methods_section(methods_results, query, model)
+    systematic_review["Methods"] = generate_methods_section(
+        results=methods_results,
+        query=query,
+        chunk_size=30,
+        previous_sections=_get_fixed_limit_previous_sections(systematic_review, section_char_limit)
+    )
 
-    print("🔍 生成 Results 章节...")
+    print("🔍 Generating Results section...")
     results_results = search_pinecone_with_fallback(query, paper_ids=paper_ids, section="Results", top_k=50)
-    systematic_review["Results"] = generate_results_section(results_results, query, model)
+    systematic_review["Results"] = generate_results_section(
+        results=results_results,
+        query=query,
+        chunk_size=30,
+        previous_sections=_get_fixed_limit_previous_sections(systematic_review, section_char_limit)
+    )
 
-    print("🔍 生成 Discussion 章节...")
+    print("🔍 Generating Discussion section...")
     discussion_results = search_pinecone_with_fallback(query, paper_ids=paper_ids, section="Discussion", top_k=50)
-    systematic_review["Discussion"] = generate_discussion_section(discussion_results, query, model)
+    systematic_review["Discussion"] = generate_discussion_section(
+        results=discussion_results,
+        query=query,
+        chunk_size=30,
+        previous_sections=_get_fixed_limit_previous_sections(systematic_review, section_char_limit)
+    )
 
-    print("🔍 生成 Conclusion 章节...")
+    print("🔍 Generating Conclusion section...")
     conclusion_results = search_pinecone_with_fallback(query, paper_ids=paper_ids, section="Conclusion", top_k=50)
-    systematic_review["Conclusion"] = generate_conclusion_section(conclusion_results, query, model)
+    systematic_review["Conclusion"] = generate_conclusion_section(
+        results=conclusion_results,
+        query=query,
+        chunk_size=30,
+        previous_sections=_get_fixed_limit_previous_sections(systematic_review, section_char_limit)
+    )
 
     return systematic_review
 
 
+
 def process_and_store_pdfs():
-    """Processes user-uploaded PDFs and stores embeddings in Pinecone."""
+    '''Processes user-uploaded PDFs and stores embeddings in Pinecone.'''
     
-    user_files = [f for f in os.listdir(USER_PAPERS_DIR) if f.endswith(".pdf")]
+    user_files = [f for f in os.listdir(USER_PAPERS_DIR) if f.endswith('.pdf')]
 
     if not user_files:
-        print("⚠️ No user-uploaded PDFs found in 'backend/user_uploads/'. Please upload files first.")
+        print('⚠️ No user-uploaded PDFs found in "backend/user_uploads/". Please upload files first.')
         return
 
-    for pdf_file in tqdm(user_files, desc="Processing User Papers"):
+    for pdf_file in tqdm(user_files, desc='Processing User Papers'):
         pdf_path = os.path.join(USER_PAPERS_DIR, pdf_file)
-        paper_id = pdf_file.replace(".pdf", "")  # Use filename as namespace
+        paper_id = pdf_file.replace('.pdf', '')  # Use filename as namespace
 
-        print(f"📄 Extracting text from {pdf_file}...")
+        print(f'📄 Extracting text from {pdf_file}...')
         text = pdf_to_text(pdf_path)
         classified_chunks = split_text_into_chunks(text)  # Now returns classified sections
 
-        print(f"📦 Storing {len(classified_chunks)} chunks in Pinecone under '{paper_id}'...")
+        print(f'📦 Storing {len(classified_chunks)} chunks in Pinecone under {paper_id} ...')
         store_chunks_in_pinecone(classified_chunks, paper_id=paper_id)
 
-def main():
-    """Pipeline for processing user PDFs and generating a systematic review."""
-
-    # ✅ Step 1: Initialize Pinecone
-    initialize_pinecone()
-
-    # ✅ Step 2: Preload default research papers if missing
-    # preload_research_papers()
-
-    # ✅ Step 3: Process and store user PDFs
-    process_and_store_pdfs()
-
-    # ✅ Step 4: Generate systematic review
-    query = "What are the key findings on COVID-19 vaccines?"
-    print("📖 Generating final systematic review...")
-
-    final_review = generate_full_systematic_review(query, model)
-
-    # ✅ Step 5: Save results
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump({"review": final_review}, f, indent=4, ensure_ascii=False)
-
-    print(f"✅ Systematic review saved to {OUTPUT_PATH}")
-
-if __name__ == "__main__":
-    main()
 
 ###
 
-import os
-import pinecone
-import dotenv
 
-# Load API keys
-dotenv.load_dotenv()
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-PINECONE_ENV = "us-east-1"
-INDEX_NAME = "fuck"
-VECTOR_DIMENSION = 1536  # OpenAI Embeddings dimension
 
-# New way to initialize Pinecone (v3+)
-from pinecone import Pinecone, ServerlessSpec
 
-# Initialize Pinecone client
-pc = Pinecone(api_key=PINECONE_API_KEY)
 
 def initialize_pinecone():
-    """ Initializes Pinecone and creates an index if it doesn't exist. """
+    ''' Initializes Pinecone and creates an index if it doesn't exist. '''
     
     # Check if index exists, if not create it
-    if INDEX_NAME not in pc.list_indexes().names():
-        print(f"Creating Pinecone index: {INDEX_NAME}...")
-        pc.create_index(
-            name=INDEX_NAME,
+    if PINECONE_INDEX_NAME not in pinecone.list_indexes().names():
+        print(f'Creating Pinecone index: {PINECONE_INDEX_NAME}...')
+        pinecone.create_index(
+            name=PINECONE_INDEX_NAME,
             dimension=VECTOR_DIMENSION,
-            metric="cosine",
+            metric=SEARCH_METRIC,
             spec=ServerlessSpec(
-                cloud='aws',
-                region='us-east-1'  
+                cloud=SPEC_CLOUD,
+                region=SPEC_REGION  
             )
         )
-        print(f"Index '{INDEX_NAME}' created successfully!")
+        print(f'Index "{PINECONE_INDEX_NAME}" created successfully!')
     else:
-        print(f"Index '{INDEX_NAME}' already exists.")
+        print(f'Index "{PINECONE_INDEX_NAME}" already exists.')
 
-if __name__ == "__main__":
-    initialize_pinecone()
+# if __name__ == '__main__':
+#     initialize_pinecone()
 
 ###
 
-import fitz  # PyMuPDF for PDF processing
-import re
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import ChatOpenAI
-import os
-import dotenv
 
-# ✅ Load environment variables
-dotenv.load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# ✅ Initialize OpenAI LLM
-model = ChatOpenAI(api_key=OPENAI_API_KEY)
+
 
 def pdf_to_text(pdf_path):
-    """Extracts text from a PDF file."""
+    '''Extracts text from a PDF file.'''
     doc = fitz.open(pdf_path)
-    text = "\n".join([page.get_text("text") for page in doc])
+    text = '\n'.join([page.get_text('text') for page in doc])
 
     # Clean text: remove unnecessary whitespace & empty lines
-    text = "\n".join([line.strip() for line in text.split("\n") if line.strip()])
+    text = '\n'.join([line.strip() for line in text.split('\n') if line.strip()])
     return text
 
 def clean_text(text):
-    """Cleans text by removing extra spaces, line breaks, and merging broken words."""
+    '''Cleans text by removing extra spaces, line breaks, and merging broken words.'''
     text = text.replace('\n', ' ')
     text = re.sub(r'\s+', ' ', text)
     text = re.sub(r'[§†‡]', '', text)
@@ -509,8 +539,8 @@ def clean_text(text):
     return text.strip()
 
 def classify_chunk_with_llm(chunk):
-    """Classifies a text chunk into Background, Methods, Results, Discussion, or Conclusion using LLM."""
-    prompt = f"""
+    '''Classifies a text chunk into Background, Methods, Results, Discussion, or Conclusion using LLM.'''
+    prompt = f'''
     You are an AI assistant classifying research paper sections.
     Determine which section this text belongs to: Background, Methods, Results, Discussion, Conclusion.
 
@@ -519,59 +549,48 @@ def classify_chunk_with_llm(chunk):
     ------------------
     
     Output only the section name:
-    """
+    '''
     response = model.invoke(prompt).content.strip()
-    valid_sections = {"Background", "Methods", "Results", "Discussion", "Conclusion"}
-    return response if response in valid_sections else "Background"
+    valid_sections = {'Background', 'Methods', 'Results', 'Discussion', 'Conclusion'}
+    return response if response in valid_sections else 'Background'
 
 def split_text_into_chunks(text, chunk_size=1500, overlap=300):
-    """Splits text into smaller chunks while keeping sentence integrity and classifies sections."""
+    '''Splits text into smaller chunks while keeping sentence integrity and classifies sections.'''
     text = clean_text(text)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap, 
-                                                   separators=["\n\n", "\n", ".", "?", "!"])
+                                                   separators=['\n\n', '\n', '.', '?', '!'])
     chunks = text_splitter.split_text(text)
 
     # Classify chunks into sections
-    classified_chunks = [{"text": chunk, "section": classify_chunk_with_llm(chunk)} for chunk in chunks]
+    classified_chunks = [{'text': chunk, 'section': classify_chunk_with_llm(chunk)} for chunk in chunks]
     
     return classified_chunks
 
-if __name__ == "__main__":
-    sample_pdf = "preloaded_papers/covid_vaccine_1.pdf"
-    text = pdf_to_text(sample_pdf)
-    classified_chunks = split_text_into_chunks(text)
+# if __name__ == '__main__':
+#     sample_pdf = 'preloaded_papers/covid_vaccine_1.pdf'
+#     text = pdf_to_text(sample_pdf)
+#     classified_chunks = split_text_into_chunks(text)
 
-    # Print first 5 classified chunks for testing
-    for chunk in classified_chunks[:5]:
-        print(f"📄 Section: {chunk['section']}\n🔹 {chunk['text'][:500]}...\n")
+#     # Print first 5 classified chunks for testing
+#     for chunk in classified_chunks[:5]:
+#         print(f'📄 Section: {chunk['section']}\n🔹 {chunk['text'][:500]}...\n')
 
 ###
 
-import os
-from pinecone import Pinecone
-from langchain_openai import OpenAIEmbeddings
 
-# ✅ Load API Keys
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# ✅ Connect to Pinecone
-pc = Pinecone(api_key=PINECONE_API_KEY)
-index = pc.Index("my-index")  # Update with your Pinecone index name
 
-# ✅ Initialize OpenAI Embeddings
-embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
-def search_pinecone(query, paper_id=None, section="Results", top_k=10):
-    """Search for relevant text chunks in Pinecone based on Paper_ID and Section."""
+def search_pinecone(query, paper_id=None, section='Results', top_k=10):
+    '''Search for relevant text chunks in Pinecone based on Paper_ID and Section.'''
 
     # Construct namespace based on whether a specific paper is requested
     if paper_id:
-        namespace = f"SYSTEMATIC_REVIEW/{paper_id}/{section}"
+        namespace = f'SYSTEMATIC_REVIEW/{paper_id}/{section}'
     else:
-        namespace = f"SYSTEMATIC_REVIEW/*/{section}"  # Search all papers' Results by default
+        namespace = f'SYSTEMATIC_REVIEW/*/{section}'  # Search all papers' Results by default
 
-    print(f"🔍 Searching Pinecone in namespace: '{namespace}' for query: '{query}'...")
+    print(f'🔍 Searching Pinecone in namespace: "{namespace}" for query: "{query}"...')
 
     # Convert query to vector
     query_vector = embeddings.embed_query(query)
@@ -580,91 +599,74 @@ def search_pinecone(query, paper_id=None, section="Results", top_k=10):
     results = index.query(vector=query_vector, top_k=top_k, namespace=namespace, include_metadata=True)
 
     # Extract relevant text
-    return [match["metadata"]["text"] for match in results["matches"]]
+    return [match['metadata']['text'] for match in results['matches']]
 
 
 def get_all_paper_ids():
-    """从 Pinecone 获取所有存储的论文 ID"""
+    '''从 Pinecone 获取所有存储的论文 ID'''
     index_stats = index.describe_index_stats()
     paper_ids = set()
 
-    for namespace in index_stats["namespaces"]:
-        if namespace.startswith("SYSTEMATIC_REVIEW/"):
-            parts = namespace.split("/")
+    for namespace in index_stats['namespaces']:
+        if namespace.startswith('SYSTEMATIC_REVIEW/'):
+            parts = namespace.split('/')
             if len(parts) > 1:
                 paper_ids.add(parts[1])
 
     return list(paper_ids)
 
-def search_pinecone_with_fallback(query, paper_ids=None, section="Results", top_k=10):
-    """在 Pinecone 里根据 Paper_ID 和 Section 搜索相关文本片段"""
+def search_pinecone_with_fallback(query, paper_ids=None, section='Results', top_k=10):
+    '''Search for relevant text fragments in Pinecone based on Paper_ID and Section'''
 
     query_vector = embeddings.embed_query(query)
-    print(f"🔍 查询向量 (前10维): {query_vector[:10]}")  # 仅打印前 10 维以供调试
+    print(f'🔍 Query vector (first 10 dimensions): {query_vector[:10]}')  # Print only the first 10 dimensions for debugging
 
     all_results = []
 
     if paper_ids is None:
-        paper_ids = get_all_paper_ids()  # ✅ 自动获取所有 `Paper_ID`
+        paper_ids = get_all_paper_ids()  # ✅ Automatically get all `Paper_ID`s
 
     if not paper_ids:
-        print("⚠️ 没有找到任何已存储的论文，无法进行查询。")
+        print('⚠️ No stored papers found, unable to query.')
         return []
 
-    print(f"📄 发现 {len(paper_ids)} 篇存储的论文: {paper_ids}")
+    print(f'📄 Found {len(paper_ids)} stored papers: {paper_ids}')
 
-    # ✅ 遍历所有 `Paper_ID`，分别查询
+    # ✅ Iterate over all `Paper_ID`s and query each
     for paper_id in paper_ids:
-        namespace = f"SYSTEMATIC_REVIEW/{paper_id}/{section}"
-        print(f"🔍 正在 Pinecone 查询 namespace: '{namespace}'，搜索问题: '{query}'...")
+        namespace = f'SYSTEMATIC_REVIEW/{paper_id}/{section}'
+        print(f'🔍 Querying Pinecone in namespace: "{namespace}", query: "{query}"...')
 
         results = index.query(vector=query_vector, top_k=top_k, namespace=namespace, include_metadata=True)
 
-        if results["matches"]:
-            print(f"✅ 在 {namespace} 中检索到 {len(results['matches'])} 条结果")
-            for match in results["matches"]:
-                print(f"📄 片段内容: {match['metadata']['text'][:100]}...")
-            all_results.extend([match["metadata"]["text"] for match in results["matches"]])
+        if results['matches']:
+            print(f'✅ Found {len(results['matches'])} results in {namespace}')
+            for match in results['matches']:
+                print(f'📄 Fragment content: {match['metadata']['text'][:100]}...')
+            all_results.extend([match['metadata']['text'] for match in results['matches']])
         else:
-            print(f"⚠️ 在 {namespace} 没有找到相关结果")
+            print(f'⚠️ No relevant results found in {namespace}')
 
     if not all_results:
-        print("⚠️ 仍然没有找到相关结果，请检查 Pinecone 数据存储是否正确")
+        print('⚠️ Still no relevant results found, please check if Pinecone data storage is correct')
 
     return all_results
 
 ##
 
-import os
-import dotenv
-from pinecone import Pinecone
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from process_pdf import pdf_to_text, split_text_into_chunks
+
 
 # ✅ Load environment variables
-dotenv.load_dotenv()
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-INDEX_NAME = "fuck"
 
-# ✅ Connect to Pinecone
-pc = Pinecone(api_key=PINECONE_API_KEY)
 
 # ✅ Ensure index exists
-if INDEX_NAME not in pc.list_indexes().names():
-    raise ValueError(f"⚠️ Index '{INDEX_NAME}' not found! Run `initialize_pinecone.py` first.")
+if PINECONE_INDEX_NAME not in pinecone.list_indexes().names():
+    raise ValueError(f'⚠️ Index "{PINECONE_INDEX_NAME}"" not found! Run `initialize_pinecone.py` first.')
 
-index = pc.Index(INDEX_NAME)
 
-# ✅ Initialize OpenAI Embeddings
-embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-
-# ✅ Initialize LLM model
-llm_model = ChatOpenAI(api_key=OPENAI_API_KEY)
-
-def classify_chunk_with_llm(chunk_text, model):
-    """Classifies a text chunk into Background, Methods, Results, Discussion, or Conclusion using LLM."""
-    prompt = f"""
+def classify_chunk_with_llm(chunk_text):
+    '''Classifies a text chunk into Background, Methods, Results, Discussion, or Conclusion using LLM.'''
+    prompt = f'''
     You are an AI assistant classifying research paper sections.
     The following text is an excerpt from a scientific paper.
     Determine whether it belongs to one of these sections:
@@ -681,111 +683,139 @@ def classify_chunk_with_llm(chunk_text, model):
     ------------------
     
     Output only the section name: 
-    """
+    '''
 
     try:
         response = model.invoke(prompt).content.strip()
-        valid_sections = {"Background", "Methods", "Results", "Discussion", "Conclusion"}\
+        valid_sections = {'Background', 'Methods', 'Results', 'Discussion', 'Conclusion'}\
         
-        classification = response if response in valid_sections else "Background"
-        print(f"✅ LLM classified chunk as '{classification}'")
+        classification = response if response in valid_sections else 'Background'
+        print(f'✅ LLM classified chunk as "{classification}"')
         return classification
     except Exception as e:
-        print(f"⚠️ LLM classification failed: {e}. Defaulting to 'Background'.")
-        return "Background"
+        print(f'⚠️ LLM classification failed: {e}. Defaulting to "Background".')
+        return 'Background'
 
 def get_text_embedding(text):
-    """Convert text into vector embeddings using OpenAI embeddings."""
+    '''Convert text into vector embeddings using OpenAI embeddings.'''
     if not isinstance(text, str):
-        raise TypeError("❌ get_text_embedding() received a non-string input.")
+        raise TypeError('❌ get_text_embedding() received a non-string input.')
 
     return embeddings.embed_query(text)
 
 def store_chunks_in_pinecone(text_chunks, paper_id):
-    """Stores document chunks in Pinecone DB under Systematic Review namespaces."""
+    '''Stores document chunks in Pinecone DB under Systematic Review namespaces.'''
 
-    global index  
-    if INDEX_NAME not in pc.list_indexes().names():
-        raise ValueError(f"⚠️ Index '{INDEX_NAME}' not found! Run `initialize_pinecone.py` first.")
+    if PINECONE_INDEX_NAME not in pinecone.list_indexes().names():
+        raise ValueError(f'⚠️ Index "{PINECONE_INDEX_NAME}" not found! Run `initialize_pinecone.py` first.')
 
-    index = pc.Index(INDEX_NAME)
 
     # ✅ Get existing namespaces to avoid re-storing sections
     index_stats = index.describe_index_stats()
-    existing_namespaces = index_stats.get("namespaces", {})
+    existing_namespaces = index_stats.get('namespaces', {})
 
     # ✅ Instead of skipping the whole paper, only skip already stored sections
-    stored_sections = {ns.split("/")[-1] for ns in existing_namespaces if ns.startswith(f"SYSTEMATIC_REVIEW/{paper_id}")}
+    stored_sections = {ns.split('/')[-1] for ns in existing_namespaces if ns.startswith(f'SYSTEMATIC_REVIEW/{paper_id}')}
 
     # ✅ Process each chunk separately
     for i, chunk in enumerate(text_chunks):
-        if "text" not in chunk or not isinstance(chunk["text"], str):
-            print(f"⚠️ Skipping invalid chunk {i} for '{paper_id}'.")
+        if 'text' not in chunk or not isinstance(chunk['text'], str):
+            print(f'⚠️ Skipping invalid chunk {i} for "{paper_id}".')
             continue
 
         # ✅ Call LLM for classification and ensure it's printed
-        section = classify_chunk_with_llm(chunk["text"], llm_model)
-        print(f"🔍 Chunk {i} classified as: {section}")  # ✅ Ensure we see LLM classification
+        section = classify_chunk_with_llm(chunk['text'])
+        print(f'🔍 Chunk {i} classified as: {section}')  # ✅ Ensure we see LLM classification
 
-        namespace = f"SYSTEMATIC_REVIEW/{paper_id}/{section}"
+        namespace = f'SYSTEMATIC_REVIEW/{paper_id}/{section}'
 
         # ✅ Skip storing chunks for sections that already exist
         if section in stored_sections:
-            print(f"⚠️ Skipping chunk {i} (already stored in {namespace}).")
+            print(f'⚠️ Skipping chunk {i} (already stored in {namespace}).')
             continue
 
-        vector = get_text_embedding(chunk["text"])
+        vector = get_text_embedding(chunk['text'])
 
         # ✅ Explicitly store under correct namespace
         index.upsert([
             (
-                f"{paper_id}-chunk-{i}",
+                f'{paper_id}-chunk-{i}',
                 vector,
                 {
-                    "text": chunk["text"],
-                    "source": paper_id,
-                    "section": section
+                    'text': chunk['text'],
+                    'source': paper_id,
+                    'section': section
                 }
             )
         ], namespace=namespace)
 
-        print(f"✅ Stored chunk {i} in Pinecone under '{namespace}'!")
+        print(f'✅ Stored chunk {i} in Pinecone under "{namespace}"!')
 
-    print(f"✅ Successfully stored {len(text_chunks)} chunks in Pinecone under '{paper_id}'!")
-
-
+    print(f'✅ Successfully stored {len(text_chunks)} chunks in Pinecone under "{paper_id}"!')
 
 
 
-def process_and_store_papers(directory="backend/papers"):
-    """Processes all PDFs in the given directory and stores their embeddings in Pinecone."""
+
+
+def process_and_store_papers(directory='backend/papers'):
+    '''Processes all PDFs in the given directory and stores their embeddings in Pinecone.'''
     
     if not os.path.exists(directory):
-        print(f"⚠️ Directory '{directory}' not found.")
+        print(f'⚠️ Directory "{directory}" not found.')
         return
 
-    pdf_files = [f for f in os.listdir(directory) if f.endswith(".pdf")]
+    pdf_files = [f for f in os.listdir(directory) if f.endswith('.pdf')]
 
     if not pdf_files:
-        print("⚠️ No PDF files found in the directory.")
+        print('⚠️ No PDF files found in the directory.')
         return
 
     for pdf_file in pdf_files:
         pdf_path = os.path.join(directory, pdf_file)
-        paper_id = pdf_file.replace(".pdf", "")  # Use filename as paper ID
+        paper_id = pdf_file.replace('.pdf', '')  # Use filename as paper ID
 
-        print(f"📄 Processing {pdf_file}...")
+        print(f'📄 Processing {pdf_file}...')
 
         text = pdf_to_text(pdf_path)
 
         if not text:
-            print(f"⚠️ Skipping '{pdf_file}' (empty or unreadable).")
+            print(f'⚠️ Skipping "{pdf_file}" (empty or unreadable).')
             continue
 
         classified_chunks = split_text_into_chunks(text)  # ✅ Returns classified dictionary chunks
 
-        print(f"🔄 Storing {len(classified_chunks)} chunks in Pinecone under '{paper_id}'...")
+        print(f'🔄 Storing {len(classified_chunks)} chunks in Pinecone under "{paper_id}"...')
         store_chunks_in_pinecone(classified_chunks, paper_id)  # ✅ Pass structured chunks
 
-if __name__ == "__main__":
-    process_and_store_papers()
+# if __name__ == '__main__':
+#     process_and_store_papers()
+
+
+def main():
+    '''Pipeline for processing user PDFs and generating a systematic review.'''
+
+    # ✅ Step 1: Initialize Pinecone
+    # initialize_pinecone()
+
+    # ✅ Step 2: Preload default research papers if missing
+    # preload_research_papers()
+
+    # ✅ Step 3: Process and store user PDFs
+    # process_and_store_pdfs()
+
+    # ✅ Step 4: Generate systematic review
+    query = 'What is the efficacy of COVID-19 vaccines?'
+    print('📖 Generating final systematic review...')
+
+    final_review = generate_full_systematic_review(query, model)
+
+    # ✅ Step 5: Save results
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+
+    with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
+        json.dump({'review': final_review}, f, indent=4, ensure_ascii=False)
+
+    print(f'✅ Systematic review saved to {OUTPUT_PATH}')
+
+if __name__ == '__main__':
+    main()

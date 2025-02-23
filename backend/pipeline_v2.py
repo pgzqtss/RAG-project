@@ -1,6 +1,7 @@
 import os
 import re
 import textwrap
+import json
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -400,7 +401,7 @@ def _get_fixed_limit_previous_sections(systematic_review, section_char_limit):
     previous_sections = []
 
     # Iterate through the sections in the order they were generated
-    for section_title, section_content in systematic_review.items():
+    for _, section_content in systematic_review.items():
         section_content_str = str(section_content)  # Ensure content is a string
         # Truncate the section to the first `section_char_limit` characters
         truncated_section = section_content_str[:section_char_limit]
@@ -487,31 +488,17 @@ def process_and_store_all_pdfs():
         print('⚠️ No user-uploaded PDFs found in "backend/user_uploads/". Please upload files first.')
         return
     
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        for pdf_file in user_files:
-            executor.submit(process_and_store_pdf, pdf_file)
+    for pdf_file in tqdm(user_files, desc='Processing User Papers'): # bish
+        pdf_path = os.path.join(USER_PAPERS_DIR, pdf_file)
+        paper_id = pdf_file.replace('.pdf', '')  # Use filename as namespace
 
-    # for pdf_file in tqdm(user_files, desc='Processing User Papers'): # bish
-    #     pdf_path = os.path.join(USER_PAPERS_DIR, pdf_file)
-    #     paper_id = pdf_file.replace('.pdf', '')  # Use filename as namespace
+        print(f'📄 Extracting text from {pdf_file}...')
+        text = pdf_to_text(pdf_path)
+        text_chunks = split_text_into_chunks(text)  # Now returns classified sections
 
-    #     print(f'📄 Extracting text from {pdf_file}...')
-    #     text = pdf_to_text(pdf_path)
-    #     text_chunks = split_text_into_chunks(text)  # Now returns classified sections
-
-    #     print(f'📦 Storing {len(text_chunks)} chunks in Pinecone under {paper_id} ...')
-    #     upsert_all_chunks(text_chunks=text_chunks, 
-    #                              paper_id=paper_id)
-
-
-
-
-
-###
-
-
-
-
+        print(f'📦 Storing {len(text_chunks)} chunks in Pinecone under {paper_id} ...')
+        upsert_all_chunks(text_chunks=text_chunks, 
+                                 paper_id=paper_id)
 
 def initialise_pinecone():
     ''' Initializes Pinecone and creates an index if it doesn't exist. '''
@@ -532,15 +519,6 @@ def initialise_pinecone():
     else:
         print(f'Index "{PINECONE_INDEX_NAME}" already exists.')
 
-# if __name__ == '__main__':
-#     initialise_pinecone()
-
-###
-
-
-
-
-
 def pdf_to_text(pdf_path):
     '''Extracts text from a PDF file.'''
     doc = fitz.open(pdf_path)
@@ -558,22 +536,6 @@ def clean_text(text):
     text = re.sub(r'\b(\w+)-\s+(\w+)\b', r'\1\2', text)  # Merge broken words
     return text.strip()
 
-# def classify_chunk_with_llm(chunk):
-#     '''Classifies a text chunk into Background, Methods, Results, Discussion, or Conclusion using LLM.'''
-#     prompt = f'''
-#     You are an AI assistant classifying research paper sections.
-#     Determine which section this text belongs to: Background, Methods, Results, Discussion, Conclusion.
-
-#     ---TEXT---
-#     {chunk}
-#     ------------------
-    
-#     Output only the section name:
-#     '''
-#     response = model.invoke(prompt).content.strip()
-#     valid_sections = {'Background', 'Methods', 'Results', 'Discussion', 'Conclusion'}
-#     return response if response in valid_sections else 'Background'
-
 def split_text_into_chunks(text, chunk_size=1500, overlap=300):
     '''Splits text into smaller chunks while keeping sentence integrity and classifies sections.'''
     text = clean_text(text)
@@ -581,31 +543,7 @@ def split_text_into_chunks(text, chunk_size=1500, overlap=300):
                                                    separators=['\n\n', '\n', '.', '?', '!'])
     chunks = text_splitter.split_text(text)
 
-    # Classify chunks into sections
-    # classified_chunks = [{'text': chunk, 'section': classify_chunk_with_llm(chunk)} for chunk in chunks]
-    
     return chunks
-
-# def search_pinecone(query, paper_id=None, section='Results', top_k=10):
-#     '''Search for relevant text chunks in Pinecone based on Paper_ID and Section.'''
-
-#     # Construct namespace based on whether a specific paper is requested
-#     if paper_id:
-#         namespace = f'systematic_review/{paper_id}/{section}'
-#     else:
-#         namespace = f'systematic_review/*/{section}'  # Search all papers' Results by default
-
-#     print(f'🔍 Searching Pinecone in namespace: "{namespace}" for query: "{query}"...')
-
-#     # Convert query to vector
-#     query_vector = embeddings.embed_query(query)
-
-#     # Query Pinecone index
-#     results = index.query(vector=query_vector, top_k=top_k, namespace=namespace, include_metadata=True)
-
-#     # Extract relevant text
-#     return [match['metadata']['text'] for match in results['matches']]
-
 
 def get_all_paper_ids():
     '''从 Pinecone 获取所有存储的论文 ID'''
@@ -620,13 +558,28 @@ def get_all_paper_ids():
 
     return list(paper_ids)
 
+def query_with_namespace(paper_id, section, query_vector, top_k):
+    namespace = f'systematic_review/{paper_id}/{section}'
+    print(f'🔍 Querying Pinecone in namespace: "{namespace}"')
+
+    results = index.query(vector=query_vector, top_k=top_k, namespace=namespace, include_metadata=True)
+
+    if results['matches']:
+        print(f'✅ Found {len(results['matches'])} results in {namespace}')
+        # for match in results['matches']:
+        #     print(f'📄 Fragment content: {match['metadata']['text'][:100]}...')
+        # all_results.extend([match['metadata']['text'] for match in results['matches']])
+        return results
+    else:
+        print(f'⚠️ No relevant results found in {namespace}')
+
 def search_pinecone(query, paper_ids=None, section='Results', top_k=10):
     '''Search for relevant text fragments in Pinecone based on Paper_ID and Section'''
 
     query_vector = embeddings.embed_query(query)
     print(f'🔍 Query vector (first 10 dimensions): {query_vector[:10]}')  # Print only the first 10 dimensions for debugging
 
-    all_results = []
+    result = []
 
     if paper_ids is None:
         paper_ids = get_all_paper_ids()  # ✅ Automatically get all `Paper_ID`s
@@ -637,33 +590,23 @@ def search_pinecone(query, paper_ids=None, section='Results', top_k=10):
 
     print(f'📄 Found {len(paper_ids)} stored papers: {paper_ids}')
 
-    # ✅ Iterate over all `Paper_ID`s and query each
-    for paper_id in paper_ids:
-        namespace = f'systematic_review/{paper_id}/{section}'
-        print(f'🔍 Querying Pinecone in namespace: "{namespace}", query: "{query}"...')
+    with ThreadPoolExecutor() as executor:
+        future_to_queries = {
+            executor.submit(query_with_namespace, paper_id, section, query_vector, top_k): 
+            paper_id for paper_id in paper_ids
+        }
 
-        results = index.query(vector=query_vector, top_k=top_k, namespace=namespace, include_metadata=True)
+        for future in as_completed(future_to_queries):
+            try:
+                response = future.result()
+                result.extend([match['metadata']['text'] for match in response['matches']])
+            except Exception as e:
+                print(f'Error querying namespace {future_to_queries[future]}: {e}')
 
-        if results['matches']:
-            print(f'✅ Found {len(results['matches'])} results in {namespace}')
-            for match in results['matches']:
-                print(f'📄 Fragment content: {match['metadata']['text'][:100]}...')
-            all_results.extend([match['metadata']['text'] for match in results['matches']])
-        else:
-            print(f'⚠️ No relevant results found in {namespace}')
-
-    if not all_results:
+    if not result:
         print('⚠️ Still no relevant results found, please check if Pinecone data storage is correct')
 
-    return all_results
-
-##
-
-
-
-# ✅ Load environment variables
-
-
+    return result
 
 def classify_chunk_with_llm(chunk_text):
     '''Classifies a text chunk into Background, Methods, Results, Discussion, or Conclusion using LLM.'''
@@ -688,10 +631,10 @@ def classify_chunk_with_llm(chunk_text):
 
     try:
         response = model.invoke(prompt).content.strip()
-        valid_sections = {'Background', 'Methods', 'Results', 'Discussion', 'Conclusion'}\
+        valid_sections = {'Background', 'Methods', 'Results', 'Discussion', 'Conclusion'}
         
         classification = response if response in valid_sections else 'Background'
-        print(f'✅ LLM classified chunk as "{classification}"')
+        # print(f'✅ LLM classified chunk as "{classification}"')
         return classification
     except Exception as e:
         print(f'⚠️ LLM classification failed: {e}. Defaulting to "Background".')
@@ -750,77 +693,11 @@ def upsert_all_chunks(text_chunks, paper_id):
     # ✅ Instead of skipping the whole paper, only skip already stored sections
     stored_sections = {ns.split('/')[-1] for ns in existing_namespaces if ns.startswith(f'systematic_review/{paper_id}')}
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor() as executor:
         for i, chunk in enumerate(text_chunks):
             executor.submit(upsert_chunk, i, chunk, paper_id, stored_sections)
 
-    # ✅ Process each chunk separately
-    # for i, chunk in enumerate(text_chunks): # bish
-    #     if not isinstance(chunk, str):
-    #         print(f'⚠️ Skipping invalid chunk {i} for "{paper_id}".')
-    #         continue
-
-    #     # ✅ Call LLM for classification and ensure it's printed
-    #     section = classify_chunk_with_llm(chunk)
-    #     print(f'🔍 Chunk {i} classified as: {section}')  # ✅ Ensure we see LLM classification
-
-    #     namespace = f'systematic_review/{paper_id}/{section}'
-
-    #     # ✅ Skip storing chunks for sections that already exist
-    #     if section in stored_sections:
-    #         print(f'⚠️ Skipping chunk {i} (already stored in {namespace}).')
-    #         continue
-
-    #     vector = get_text_embedding(chunk)
-
-    #     # ✅ Explicitly store under correct namespace
-    #     index.upsert([
-    #         (
-    #             f'{paper_id}-chunk-{i}',
-    #             vector,
-    #             {
-    #                 'text': chunk,
-    #                 'source': paper_id,
-    #                 'section': section
-    #             }
-    #         )
-    #     ], namespace=namespace)
-
-    #     print(f'✅ Stored chunk {i} in Pinecone under "{namespace}"!')
-
     print(f'✅ Successfully stored {len(text_chunks)} chunks in Pinecone under "{paper_id}"!')
-
-
-# def process_and_store_papers(directory='backend/papers'):
-#     '''Processes all PDFs in the given directory and stores their embeddings in Pinecone.'''
-    
-#     if not os.path.exists(directory):
-#         print(f'⚠️ Directory "{directory}" not found.')
-#         return
-
-#     pdf_files = [f for f in os.listdir(directory) if f.endswith('.pdf')]
-
-#     if not pdf_files:
-#         print('⚠️ No PDF files found in the directory.')
-#         return
-
-#     for pdf_file in pdf_files:
-#         pdf_path = os.path.join(directory, pdf_file)
-#         paper_id = pdf_file.replace('.pdf', '')  # Use filename as paper ID
-
-#         print(f'📄 Processing {pdf_file}...')
-
-#         text = pdf_to_text(pdf_path)
-
-#         if not text:
-#             print(f'⚠️ Skipping "{pdf_file}" (empty or unreadable).')
-#             continue
-
-#         classified_chunks = split_text_into_chunks(text)  # ✅ Returns classified dictionary chunks
-
-#         print(f'🔄 Storing {len(classified_chunks)} chunks in Pinecone under "{paper_id}"...')
-#         upsert_all_chunks(classified_chunks, paper_id)  # ✅ Pass structured chunks
-
 
 def main():
     '''Pipeline for processing user PDFs and generating a systematic review.'''
@@ -830,64 +707,22 @@ def main():
     global index
     index = pinecone.Index(PINECONE_INDEX_NAME)
 
-    # ✅ Step 2: Preload default research papers if missing
-    # preload_research_papers()
-
     # ✅ Step 3: Process and store user PDFs
     process_and_store_all_pdfs()
 
     # ✅ Step 4: Generate systematic review
-    # query = 'What is the efficacy of COVID-19 vaccines?'
-    # print('📖 Generating final systematic review...')
+    query = 'What is the efficacy of COVID-19 vaccines?'
+    print('📖 Generating final systematic review...')
 
-    # final_review = generate_full_systematic_review(query, model)
+    final_review = generate_full_systematic_review(query)
 
     # # ✅ Step 5: Save results
-    # os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
 
-    # with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
-    #     json.dump({'review': final_review}, f, indent=4, ensure_ascii=False)
+    with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
+        json.dump({'review': final_review}, f, indent=4, ensure_ascii=False)
 
-    # print(f'✅ Systematic review saved to {OUTPUT_PATH}')
+    print(f'✅ Systematic review saved to {OUTPUT_PATH}')
 
 if __name__ == '__main__':
     main()
-
-
-
-'''
-
-for i, chunk in enumerate(text_chunks):
-        if 'text' not in chunk or not isinstance(chunk['text'], str):
-            print(f'⚠️ Skipping invalid chunk {i} for "{paper_id}".')
-            continue
-
-        # ✅ Call LLM for classification and ensure it's printed
-        section = classify_chunk_with_llm(chunk['text'])
-        print(f'🔍 Chunk {i} classified as: {section}')  # ✅ Ensure we see LLM classification
-
-        namespace = f'systematic_review/{paper_id}/{section}'
-
-        # ✅ Skip storing chunks for sections that already exist
-        if section in stored_sections:
-            print(f'⚠️ Skipping chunk {i} (already stored in {namespace}).')
-            continue
-
-        vector = get_text_embedding(chunk['text'])
-
-        # ✅ Explicitly store under correct namespace
-        index.upsert([
-            (
-                f'{paper_id}-chunk-{i}',
-                vector,
-                {
-                    'text': chunk['text'],
-                    'source': paper_id,
-                    'section': section
-                }
-            )
-        ], namespace=namespace)
-
-        print(f'✅ Stored chunk {i} in Pinecone under "{namespace}"!')
-
-'''

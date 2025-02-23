@@ -4,24 +4,33 @@ import React from 'react';
 import './globals.css'
 import Input from './components/Input';
 import { AuthProvider } from './api/auth_context';
+import { useAuth } from './api/auth_context';
+import Home from './components/HomePage';
 
-function MainContent() {
+function MainContent({ user }) {
   return (
     <div className='flex h-full overflow-hidden'>
       <div className='w-full h-full p-4'>
-        <Input />
+        {user? (
+          <Input />
+        ) : (
+          <Home />
+          )
+        }
       </div>
     </div>
   );
 }
 
 export default function App() {
+  const { user } = useAuth();
+  console.log(user)
+
   return (
     <AuthProvider>
-      <div>
-        Note: You will need to sign up before generating. Will add logic to not allow generation if not logged in.
-      </div>
-      <MainContent />
+      <MainContent 
+        user={user}
+      />
     </AuthProvider>
   );
 }

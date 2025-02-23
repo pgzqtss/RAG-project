@@ -5,7 +5,6 @@ Rag-n-Bones is a web application that uses an input of PDFs to generate systemat
 
 ### Prerequisites
 - Latest version of `pip` is installed
-
 - `MySQL` installed (database)
 - `Node.js` and `npm` installed (frontend)
 
@@ -71,4 +70,3 @@ Rag-n-Bones is a web application that uses an input of PDFs to generate systemat
 ```
 
 The Next.js app will run on <a href='http:/localhost:3000'>http://localhost:3000</a>
-

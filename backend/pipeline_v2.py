@@ -243,18 +243,53 @@ def generate_conclusion_section(results, query, chunk_size, previous_sections):
         previous_sections=previous_sections
     )
 
+'''
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
 
 # Load BERT model for similarity-based filtering
 bert_model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Define length constraints for different sections
-section_length_limits = {
-    'Background': 1200,  # 800-1200 words
-    'Methods': 1500,  # 1000-1500 words
-    'Results': 2500,  # 1500-2500 words
-    'Discussion': 3000,  # 2000-3000 words
-    'Conclusion': 600,  # 300-600 words
+# Define length constraints for different sections (words)
+SECTION_LENGTH_LIMITS = {
+    'Background': 1200, 
+    'Methods': 1500, 
+    'Results': 2500,
+    'Discussion': 3000,
+    'Conclusion': 600, 
 }
 
 def generate_section(results, query, section_title, section_prompt, 
@@ -284,7 +319,7 @@ def generate_section(results, query, section_title, section_prompt,
         previous_sections = []  # Force conversion to an empty list to ensure no errors
 
     # Retrieve the max length for this section
-    max_length = section_length_limits.get(section_title, 1500)  # Default to 1500 words if unspecified
+    max_length = SECTION_LENGTH_LIMITS.get(section_title, 1500)  # Default to 1500 words if unspecified
 
     # 1️⃣ **Context Expansion** (Use both research data and previously generated sections)
     context_data = '\n\n'.join(results[:chunk_size]) if results else ''
@@ -415,7 +450,7 @@ def generate_full_systematic_review(query):
     paper_ids = get_all_paper_ids()  # ✅ Get all stored paper IDs
     systematic_review = {}  # Dictionary to store all generated sections
 
-    # Define the character limit for each section (e.g., 2000 characters per section)
+    # Define the character limit for each section for use in context prompt
     section_char_limit = 2000
 
     print("🔍 Generating Background section...")
@@ -465,88 +500,8 @@ def generate_full_systematic_review(query):
 
     return systematic_review
 
-def process_and_store_pdf(pdf_file):
-    pdf_path = os.path.join(USER_PAPERS_DIR, pdf_file)
-    paper_id = pdf_file.replace('.pdf', '')  # Use filename as namespace
-
-    print(f'📄 Extracting text from {pdf_file}...')
-    text = pdf_to_text(pdf_path)
-    text_chunks = split_text_into_chunks(text)  # Now returns classified sections
-
-    print(f'📦 Storing {len(text_chunks)} chunks in Pinecone under {paper_id} ...')
-    upsert_all_chunks(text_chunks=text_chunks, 
-
-
-                                paper_id=paper_id)
-
-def process_and_store_all_pdfs():
-    '''Processes user-uploaded PDFs and stores embeddings in Pinecone.'''
-    
-    user_files = [f for f in os.listdir(USER_PAPERS_DIR) if f.endswith('.pdf')]
-
-    if not user_files:
-        print('⚠️ No user-uploaded PDFs found in "backend/user_uploads/". Please upload files first.')
-        return
-    
-    for pdf_file in tqdm(user_files, desc='Processing User Papers'): # bish
-        pdf_path = os.path.join(USER_PAPERS_DIR, pdf_file)
-        paper_id = pdf_file.replace('.pdf', '')  # Use filename as namespace
-
-        print(f'📄 Extracting text from {pdf_file}...')
-        text = pdf_to_text(pdf_path)
-        text_chunks = split_text_into_chunks(text)  # Now returns classified sections
-
-        print(f'📦 Storing {len(text_chunks)} chunks in Pinecone under {paper_id} ...')
-        upsert_all_chunks(text_chunks=text_chunks, 
-                                 paper_id=paper_id)
-
-def initialise_pinecone():
-    ''' Initializes Pinecone and creates an index if it doesn't exist. '''
-    
-    # Check if index exists, if not create it
-    if PINECONE_INDEX_NAME not in pinecone.list_indexes().names():
-        print(f'Creating Pinecone index: {PINECONE_INDEX_NAME}...')
-        pinecone.create_index(
-            name=PINECONE_INDEX_NAME,
-            dimension=VECTOR_DIMENSION,
-            metric=SEARCH_METRIC,
-            spec=ServerlessSpec(
-                cloud=SPEC_CLOUD,
-                region=SPEC_REGION  
-            )
-        )
-        print(f'Index "{PINECONE_INDEX_NAME}" created successfully!')
-    else:
-        print(f'Index "{PINECONE_INDEX_NAME}" already exists.')
-
-def pdf_to_text(pdf_path):
-    '''Extracts text from a PDF file.'''
-    doc = fitz.open(pdf_path)
-    text = '\n'.join([page.get_text('text') for page in doc])
-
-    # Clean text: remove unnecessary whitespace & empty lines
-    text = '\n'.join([line.strip() for line in text.split('\n') if line.strip()])
-    return text
-
-def clean_text(text):
-    '''Cleans text by removing extra spaces, line breaks, and merging broken words.'''
-    text = text.replace('\n', ' ')
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'[§†‡]', '', text)
-    text = re.sub(r'\b(\w+)-\s+(\w+)\b', r'\1\2', text)  # Merge broken words
-    return text.strip()
-
-def split_text_into_chunks(text, chunk_size=1500, overlap=300):
-    '''Splits text into smaller chunks while keeping sentence integrity and classifies sections.'''
-    text = clean_text(text)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap, 
-                                                   separators=['\n\n', '\n', '.', '?', '!'])
-    chunks = text_splitter.split_text(text)
-
-    return chunks
-
 def get_all_paper_ids():
-    '''从 Pinecone 获取所有存储的论文 ID'''
+    '''Get all stored paper IDs from Pinecone'''
     index_stats = index.describe_index_stats()
     paper_ids = set()
 
@@ -607,6 +562,187 @@ def search_pinecone(query, paper_ids=None, section='Results', top_k=10):
         print('⚠️ Still no relevant results found, please check if Pinecone data storage is correct')
 
     return result
+'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+
+def initialise_pinecone():
+    ''' Initializes Pinecone and creates an index if it doesn't exist. '''
+    
+    # Check if index exists, if not create it
+    if PINECONE_INDEX_NAME not in pinecone.list_indexes().names():
+        print(f'Creating Pinecone index: {PINECONE_INDEX_NAME}...')
+        pinecone.create_index(
+            name=PINECONE_INDEX_NAME,
+            dimension=VECTOR_DIMENSION,
+            metric=SEARCH_METRIC,
+            spec=ServerlessSpec(
+                cloud=SPEC_CLOUD,
+                region=SPEC_REGION  
+            )
+        )
+        print(f'Index "{PINECONE_INDEX_NAME}" created successfully!')
+    else:
+        print(f'Index "{PINECONE_INDEX_NAME}" already exists.')
+
+'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+
+def process_and_store_all_pdfs():
+    '''Processes user-uploaded PDFs and stores embeddings in Pinecone.'''
+    
+    user_files = [f for f in os.listdir(USER_PAPERS_DIR) if f.endswith('.pdf')]
+
+    if not user_files:
+        print('⚠️ No user-uploaded PDFs found in "backend/user_uploads/". Please upload files first.')
+        return
+    
+    for pdf_file in tqdm(user_files, desc='Processing User Papers'): 
+        pdf_path = os.path.join(USER_PAPERS_DIR, pdf_file)
+        paper_id = pdf_file.replace('.pdf', '')  # Use filename as namespace
+
+        print(f'📄 Extracting text from {pdf_file}...')
+        text = pdf_to_text(pdf_path)
+        text_chunks = split_text_into_chunks(text)  # Now returns classified sections
+
+        print(f'📦 Storing {len(text_chunks)} chunks in Pinecone under {paper_id} ...')
+        upsert_all_chunks(text_chunks=text_chunks, paper_id=paper_id)
+
+def pdf_to_text(pdf_path):
+    '''Extracts text from a PDF file.'''
+    doc = fitz.open(pdf_path)
+    text = '\n'.join([page.get_text('text') for page in doc])
+
+    # Clean text: remove unnecessary whitespace & empty lines
+    text = '\n'.join([line.strip() for line in text.split('\n') if line.strip()])
+    return text
+
+def clean_text(text):
+    '''Cleans text by removing extra spaces, line breaks, and merging broken words.'''
+    text = text.replace('\n', ' ')
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'[§†‡]', '', text)
+    text = re.sub(r'\b(\w+)-\s+(\w+)\b', r'\1\2', text)  # Merge broken words
+    return text.strip()
+
+def split_text_into_chunks(text, chunk_size=1500, overlap=300):
+    '''Splits text into smaller chunks while keeping sentence integrity and classifies sections.'''
+    text = clean_text(text)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap, 
+                                                   separators=['\n\n', '\n', '.', '?', '!'])
+    chunks = text_splitter.split_text(text)
+
+    return chunks
+
+def upsert_all_chunks(text_chunks, paper_id):
+    '''Stores document chunks in Pinecone DB under Systematic Review namespaces.'''
+
+    if PINECONE_INDEX_NAME not in pinecone.list_indexes().names():
+        raise ValueError(f'⚠️ Index "{PINECONE_INDEX_NAME}" not found! Run `initialize_pinecone.py` first.')
+
+    # ✅ Get existing namespaces to avoid re-storing sections
+    index_stats = index.describe_index_stats()
+    existing_namespaces = index_stats.get('namespaces', {})
+
+    # ✅ Instead of skipping the whole paper, only skip already stored sections
+    stored_sections = {ns.split('/')[-1] for ns in existing_namespaces if ns.startswith(f'systematic_review/{paper_id}')}
+
+    with ThreadPoolExecutor() as executor:
+        for i, chunk in enumerate(text_chunks):
+            executor.submit(upsert_chunk, i, chunk, paper_id, stored_sections)
+
+    print(f'✅ Successfully stored {len(text_chunks)} chunks in Pinecone under "{paper_id}"!')
+
+def upsert_chunk(i, chunk, paper_id, stored_sections):
+    if not isinstance(chunk, str):
+        print(f'⚠️ Skipping invalid chunk {i} for "{paper_id}".')
+        return
+
+    # ✅ Call LLM for classification and ensure it's printed
+    section = classify_chunk_with_llm(chunk)
+    print(f'🔍 Chunk {i} classified as: {section}')  # ✅ Ensure we see LLM classification
+
+    namespace = f'systematic_review/{paper_id}/{section}'
+
+    # ✅ Skip storing chunks for sections that already exist
+    if section in stored_sections:
+        print(f'⚠️ Skipping chunk {i} (already stored in {namespace}).')
+        return
+
+    vector = get_text_embedding(chunk)
+
+    # ✅ Explicitly store under correct namespace
+    index.upsert([
+        (
+            f'{paper_id}-chunk-{i}',
+            vector,
+            {
+                'text': chunk,
+                'source': paper_id,
+                'section': section
+            }
+        )
+    ], namespace=namespace)
+
+    print(f'✅ Stored chunk {i} in Pinecone under "{namespace}"!')
 
 def classify_chunk_with_llm(chunk_text):
     '''Classifies a text chunk into Background, Methods, Results, Discussion, or Conclusion using LLM.'''
@@ -647,57 +783,35 @@ def get_text_embedding(text):
 
     return embeddings.embed_query(text)
 
-def upsert_chunk(i, chunk, paper_id, stored_sections):
-    if not isinstance(chunk, str):
-        print(f'⚠️ Skipping invalid chunk {i} for "{paper_id}".')
-        return
+'''
 
-    # ✅ Call LLM for classification and ensure it's printed
-    section = classify_chunk_with_llm(chunk)
-    print(f'🔍 Chunk {i} classified as: {section}')  # ✅ Ensure we see LLM classification
 
-    namespace = f'systematic_review/{paper_id}/{section}'
 
-    # ✅ Skip storing chunks for sections that already exist
-    if section in stored_sections:
-        print(f'⚠️ Skipping chunk {i} (already stored in {namespace}).')
-        return
 
-    vector = get_text_embedding(chunk)
 
-    # ✅ Explicitly store under correct namespace
-    index.upsert([
-        (
-            f'{paper_id}-chunk-{i}',
-            vector,
-            {
-                'text': chunk,
-                'source': paper_id,
-                'section': section
-            }
-        )
-    ], namespace=namespace)
 
-    print(f'✅ Stored chunk {i} in Pinecone under "{namespace}"!')
 
-def upsert_all_chunks(text_chunks, paper_id):
-    '''Stores document chunks in Pinecone DB under Systematic Review namespaces.'''
 
-    if PINECONE_INDEX_NAME not in pinecone.list_indexes().names():
-        raise ValueError(f'⚠️ Index "{PINECONE_INDEX_NAME}" not found! Run `initialize_pinecone.py` first.')
 
-    # ✅ Get existing namespaces to avoid re-storing sections
-    index_stats = index.describe_index_stats()
-    existing_namespaces = index_stats.get('namespaces', {})
 
-    # ✅ Instead of skipping the whole paper, only skip already stored sections
-    stored_sections = {ns.split('/')[-1] for ns in existing_namespaces if ns.startswith(f'systematic_review/{paper_id}')}
 
-    with ThreadPoolExecutor() as executor:
-        for i, chunk in enumerate(text_chunks):
-            executor.submit(upsert_chunk, i, chunk, paper_id, stored_sections)
 
-    print(f'✅ Successfully stored {len(text_chunks)} chunks in Pinecone under "{paper_id}"!')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
 
 def main():
     '''Pipeline for processing user PDFs and generating a systematic review.'''
@@ -709,6 +823,7 @@ def main():
 
     # ✅ Step 3: Process and store user PDFs
     process_and_store_all_pdfs()
+
 
     # ✅ Step 4: Generate systematic review
     query = 'What is the efficacy of COVID-19 vaccines?'

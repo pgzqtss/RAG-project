@@ -3,7 +3,6 @@ import { queryHistory } from '../api/query_history_api';
 export async function query(prompt_id) {
   try {
       const response = await queryHistory(prompt_id);
-      console.log(response)
   
       if (response.error) {
         return {

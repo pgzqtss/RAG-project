@@ -13,7 +13,7 @@ export async function POST(req) {
       return NextResponse.json({ status: 'Fail', error: 'No files received' }, { status: 400 });
     }
 
-    const uploadDir = path.join(process.cwd(), 'files', id);
+    const uploadDir = path.join(process.cwd(),'..', 'files', id);
     await fs.mkdir(uploadDir, { recursive: true });
 
     const uploadedFiles = [];
@@ -24,7 +24,7 @@ export async function POST(req) {
       const filePath = path.join(uploadDir, file.name);
 
       await fs.writeFile(filePath, buffer);
-      uploadedFiles.push({ filename: file.name, path: `/files/${id}/${file.name}` });
+      uploadedFiles.push({ filename: file.name, path: `../files/${id}/${file.name}` });
     }
 
     revalidatePath('/');

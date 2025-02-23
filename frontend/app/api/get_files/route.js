@@ -8,7 +8,7 @@ export async function POST(req) {
     const formData = await req.formData();
     const id = formData.get('id');
 
-    const readDir = path.join(process.cwd(), 'files', id);
+    const readDir = path.join(process.cwd(), '..', 'files', id);
     const files = fs.readdirSync(readDir);
 
     if (files.length === 0) {

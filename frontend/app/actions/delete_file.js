@@ -1,10 +1,6 @@
 export async function deleteFile(event, file, id, refreshFiles) {
   event.preventDefault();
 
-  console.log(file)
-  console.log(id)
-
-  
   try {
     const formData = new FormData();
     formData.append('file', file);

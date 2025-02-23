@@ -20,7 +20,6 @@ export async function signup(state, formData) {
   
   try {
     const response = await registerUser(username, password);
-    console.log(response)
 
     if (response.error) {
       return {

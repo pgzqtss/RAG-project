@@ -1,5 +1,5 @@
 import textwrap
-from sentence_transfomers import util
+from sentence_transformers import util
 from config import model, bert_model, SECTION_LENGTH_LIMITS
 
 def generate_section(results, query, section_title, section_prompt, 

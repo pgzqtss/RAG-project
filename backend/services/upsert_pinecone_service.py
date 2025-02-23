@@ -5,12 +5,12 @@ from services.classify_chunk_service import classify_chunk_with_llm
 
 def upsert_all_chunks(text_chunks, paper_id):
     '''Stores document chunks in Pinecone DB under Systematic Review namespaces.'''
+    index = pinecone.Index(PINECONE_INDEX_NAME)
 
-    if PINECONE_INDEX_NAME not in index.list_indexes().names():
-        raise ValueError(f'⚠️ Index "{PINECONE_INDEX_NAME}" not found! Run `initialize_pinecone.py` first.')
+    # if PINECONE_INDEX_NAME not in index.list_indexes().names():
+    #     raise ValueError(f'⚠️ Index "{PINECONE_INDEX_NAME}" not found! Run `initialize_pinecone.py` first.')
 
     # ✅ Get existing namespaces to avoid re-storing sections
-    index = pinecone.Index(PINECONE_INDEX_NAME)
     index_stats = index.describe_index_stats()
     existing_namespaces = index_stats.get('namespaces', {})
 

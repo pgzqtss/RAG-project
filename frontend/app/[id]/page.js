@@ -68,7 +68,7 @@ export default function Page({ params }) {
 
   return (
     <div className='flex h-full overflow-hidden'>
-      {isUpsertLoading && <Loading message='Upserting Vectors' />}
+      {isUpsertLoading && <Loading message='Uploading PDFs' />}
       {isGenerateLoading && <Loading message='Generating Systematic Review' />}
       {displayText && <SystematicReview prompt={input} text={output} />}
     </div>

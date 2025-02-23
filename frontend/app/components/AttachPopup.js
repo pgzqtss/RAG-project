@@ -6,36 +6,7 @@ export default function AttachPopup({ isAttachOpen, toggleAttachOpen, id, refres
   const fileInput = useRef(null); 
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // async function uploadFile(event) {
-  //   event.preventDefault();
-
-  //   const formData = new FormData();
-  //   formData.append('id', id);
-
-  //   if (fileInput.current && fileInput.current.files) {
-  //     Array.from(fileInput.current.files).forEach((file) => {
-  //       formData.append('files', file);
-  //     });
-  //   }
-
-  //   try {
-  //     const response = await fetch('/api/upload_files', {
-  //       method: 'POST',
-  //       body: formData,
-  //     });
-
-  //     const result = await response.json();
-  //     setMessage(result.status === 'Success' ? "Upload successful." : "Upload failed.");
-  //     console.log(result.status);
-  //     refreshFiles();
-  //   } catch (error) {
-  //     console.error('Error uploading files:', error);
-  //     setMessage(error.message || 'Upload failed.')
-  //   }
-  // }
-
-
+  
   return (
     <div>
       {isAttachOpen && (

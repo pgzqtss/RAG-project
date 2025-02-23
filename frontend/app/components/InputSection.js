@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useActionState, Suspense } from 'react';
 import TextArea from './TextArea';
-import SubmitButton from './SubmitButton';
 import { randomBytes } from 'crypto';
 import { useRouter } from 'next/navigation';
 

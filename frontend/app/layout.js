@@ -19,7 +19,7 @@ export default function Layout({ children }) {
       <body className='h-screen'>
         <AuthProvider>
           <div className="flex flex-row">
-            <div className={`transition-all duration-300 ${isCollapsed ? 'w-16' : 'min-w-[200pt]'}`}>
+            <div className={`transition-all duration-300 ${isCollapsed ? 'w-16' : 'min-w-[200pt] max-w-[200pt]'}`}>
               <Sidebar 
                 isCollapsed={isCollapsed} 
                 toggleIsCollapsed={toggleIsCollapsed} 

@@ -9,6 +9,10 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignup
 
   const toggleMenuOpen = () => { setMenuOpen(!isMenuOpen); }
 
+  const refreshPage = () => {
+    window.location.reload();
+  };
+
   return (
     <div className='flex justify-end w-full'>
       {user ? (
@@ -28,11 +32,11 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignup
             </div>
           </button>
           {isMenuOpen && (
-            <div className='absolute right-0 z-10 mt-[80pt] mr-4 w-48 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden hover:bg-gray-50'>
-              <div className='py-1'>
+            <div className='absolute right-0 z-10 mt-[80pt] mr-4 w-48 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden'>
+              <div className='py-1 hover:bg-gray-50'>
                 <button
                   type='button'
-                  onClick={logout}
+                  onClick={() => { logout(); refreshPage(); }}
                   className='block w-full px-4 py-2 text-left text-sm text-gray-700'
                 >
                   Log Out
@@ -44,7 +48,7 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignup
       ) : (
         <button
           type='button'
-          onClick={() => {setMenuOpen(false);toggleLoginOpen();}}
+          onClick={() => { setMenuOpen(false); toggleLoginOpen(); }}
         >
           <div className='flex justify-end items-center bg-gray-200 hover:bg-gray-300 rounded-full'>
             <div className='p-3'>

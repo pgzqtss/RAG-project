@@ -19,7 +19,6 @@ export async function uploadFile(event, fileInput, id, setMessage, refreshFiles,
 
     const result = await response.json();
     setMessage(result.status === 'Success' ? "Upload successful." : "Upload failed.");
-    console.log(result.status);
     setLoading(false);
     refreshFiles();
 

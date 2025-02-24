@@ -2,7 +2,7 @@ import textwrap
 from services.generate_section_service import generate_section
 
 def generate_background_section(results, query, chunk_size, previous_sections):
-    '''单独生成 Background 章节'''
+    '''Generate Background Section'''
     section_title = 'Background'
     section_prompt = textwrap.dedent(f'''
         {section_title}

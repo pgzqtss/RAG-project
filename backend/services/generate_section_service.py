@@ -42,8 +42,6 @@ def generate_section(results, query, section_title, section_prompt,
 
     # 2️⃣ **Construct the Prompt**
     prompt = textwrap.dedent(f'''
-    **Revised Systematic Review Writing Prompt**
-
     # 📚 **Systematic Review Writing Task: {section_title}**
 
     You are an expert researcher conducting a **Systematic Review** following **PRISMA guidelines**. 

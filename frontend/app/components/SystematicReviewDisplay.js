@@ -3,7 +3,7 @@ import remarkBreaks from 'remark-breaks';
 
 const preprocessText = (text) => {
   text = text.replace(/\n/gi,'\n\n')
-  return text.replace(/(?<=\n)(?![*-])\n/gi, "&nbsp;\n ");
+  return text.replace(/(?<=\n)(?![*-])\n/gi, '&nbsp;\n ');
 };
 
 export default function SystematicReview({ prompt, text }) {

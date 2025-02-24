@@ -9,11 +9,6 @@ PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME')
 
-# ✅ Define directories
-USER_PAPERS_DIR = 'backend/user_uploads'
-OUTPUT_DIR = 'backend/processed_texts'
-OUTPUT_PATH = os.path.join(OUTPUT_DIR, 'systematic_review.json')
-
 # Pinecone Index Initialisation 
 SEARCH_METRIC = 'cosine'
 SPEC_CLOUD = 'aws'

@@ -72,17 +72,14 @@ def generate_section(results, query, section_title, section_prompt,
     - Use this data as a reference to ensure consistency.
     - If methodology or prior findings are referenced, align your section accordingly.
 
-    ## 🛠 **Instructions for Writing This Section**
-
     ## 🎯 **Output Constraints**
 
-    - **Format:** Use clear headings & subheadings where necessary.
+    - **Format:** Use markdown headings and subheadings where ## will be the main heading and subheadings should be ###. 
     - **Word Limit:** Aim for **{max_length} words**, prioritizing essential details.
     - **Clarity & Coherence:** Ensure smooth readability and logical consistency.
+    - **MUST NOT:** Do not include any citation into the text. Do not include any markdown horizontal rules such as ---.
 
     ## 📝 **Now, generate the full {section_title} section:**
-
-
     ''')
 
     try:

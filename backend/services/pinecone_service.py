@@ -63,7 +63,7 @@ def get_all_paper_ids():
 
     return list(paper_ids)
 
-def query_with_namespace(paper_id, section, query_vector, top_k):
+def query_with_namespace(paper_id, section, query_vector, top_k, index):
     index = pinecone.Index(PINECONE_INDEX_NAME)
     namespace = f'systematic_review/{paper_id}/{section}'
     print(f'🔍 Querying Pinecone in namespace: "{namespace}"')
@@ -81,6 +81,7 @@ def query_with_namespace(paper_id, section, query_vector, top_k):
 
 def search_pinecone(query, paper_ids=None, section='Results', top_k=10):
     '''Search for relevant text fragments in Pinecone based on Paper_ID and Section'''
+    index = pinecone.Index(PINECONE_INDEX_NAME)
 
     query_vector = embeddings.embed_query(query)
     print(f'🔍 Query vector (first 10 dimensions): {query_vector[:10]}')  # Print only the first 10 dimensions for debugging
@@ -98,7 +99,7 @@ def search_pinecone(query, paper_ids=None, section='Results', top_k=10):
 
     with ThreadPoolExecutor() as executor:
         future_to_queries = {
-            executor.submit(query_with_namespace, paper_id, section, query_vector, top_k): 
+            executor.submit(query_with_namespace, paper_id, section, query_vector, top_k, index): 
             paper_id for paper_id in paper_ids
         }
 

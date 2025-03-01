@@ -7,6 +7,8 @@ from flask import jsonify
 
 def process_and_store_all_pdfs(id):
     '''Processes user-uploaded PDFs and stores embeddings in Pinecone.'''
+    text_chunks_count = 0
+
     try:
       files = get_files(id)
       print(f'Files: {files}')
@@ -17,7 +19,7 @@ def process_and_store_all_pdfs(id):
     if not files:
         print('⚠️ No user-uploaded PDFs found in "../files/".')
         return
-    
+
     for file in tqdm(files, desc='Processing User Papers'): 
         path = files[file]
         print(f'File {file}')
@@ -26,6 +28,10 @@ def process_and_store_all_pdfs(id):
         print(f'📄 Extracting text from {file}...')
         text = pdf_to_text(path)
         text_chunks = split_text_into_chunks(text)  # Now returns classified sections
+        text_chunks_count += len(text_chunks)
 
         print(f'📦 Storing {len(text_chunks)} chunks in Pinecone under {file} ...')
         upsert_all_chunks(text_chunks=text_chunks, paper_id=file)
+    
+    # Return the total number of text chunks and files for vector count checking
+    return text_chunks_count, files

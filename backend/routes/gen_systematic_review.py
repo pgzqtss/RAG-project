@@ -8,7 +8,7 @@ from services.section_prompts_service import (
   generate_discussion_section,
   generate_conclusion_section
 )
-from config import SECTION_CHAR_LIMIT, TEXT_CHUNKS_COUNT
+from config import SECTION_CHAR_LIMIT
 from flask import jsonify, request
 from __main__ import app
 

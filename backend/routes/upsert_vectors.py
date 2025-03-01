@@ -1,5 +1,6 @@
 from services.pinecone_service import initialise_pinecone
 from services.pdf_processing_service import process_and_store_all_pdfs
+from services.check_upserts_service import check_all_upserted_chunks
 from flask import request, jsonify
 from __main__ import app
 
@@ -10,7 +11,9 @@ def init_pinecone():
 
   try:
     initialise_pinecone()
-    process_and_store_all_pdfs(id)
+    text_chunks_count, files = process_and_store_all_pdfs(id)
+    check_all_upserted_chunks(files=files, chunks_count=text_chunks_count)
+    
   except Exception as e:
     print(f"Error: {e}")
     return jsonify({'error': str(e)}), 500

@@ -7,9 +7,9 @@ from sentence_transformers import SentenceTransformer
 load_dotenv()
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME')
 
 # Pinecone Index Initialisation 
+PINECONE_INDEX_NAME = 'Rag-n-Bones'
 SEARCH_METRIC = 'cosine'
 SPEC_CLOUD = 'aws'
 SPEC_REGION = 'us-east-1'

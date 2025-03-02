@@ -1,9 +1,3 @@
-'''
-Cosine Similarity Check
-Calculates how similar two vectors are in an inner product space
-It measures the cosine of the angle between two vectors
-'''
-
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
@@ -26,13 +20,15 @@ class CosineSimilarityChecker:
 
     # Removes non-ASCII characters from text
     def preprocess_text(self, text):
-        return re.sub(r'[^\x00-\x7F]+', ' ', text)
+        # Replace non-ASCII characters with a single space and strip trailing spaces
+        return re.sub(r'[^\x00-\x7F]+', ' ', text).strip()
 
     # Generates embeddings using SBERT model
     def fetch_embeddings(self, text):
         try:
             preprocessed_text = self.preprocess_text(text)
-            return model.encode(preprocessed_text, convert_to_numpy=True)  # Returns NumPy array
+            embedding = model.encode(preprocessed_text, convert_to_numpy=True)  # Returns NumPy array
+            return embedding / np.linalg.norm(embedding)
         except Exception as e:
             print(f"Error generating embeddings: {str(e)}")
             return np.zeros(model.get_sentence_embedding_dimension())  # Returns zero vector
@@ -44,7 +40,7 @@ class CosineSimilarityChecker:
 
         if not input_embeddings or np.all(output_embedding == 0):
             print("Error: Missing required embeddings")
-            return None
+            return [], 0.0  # Return empty list and 0.0 for overall_score
 
         # Converts input_embeddings to NumPy array
         input_embeddings = np.array(input_embeddings)
@@ -66,8 +62,8 @@ def read_pdfs_from_folder(folder_path):
     return pdf_files, [read_pdf(pdf) for pdf in pdf_files]
 
 # Paths
-input_folder = r"C:\Users\znkje\OneDrive\Desktop\Systems\RAG-project\backend\papers\input_papers\P3"
-output_doc = r"C:\Users\znkje\OneDrive\Desktop\Systems\RAG-project\backend\papers\output_reviews\S3.pdf"
+input_folder = os.path.join(os.path.dirname(__file__), "../papers/papers")
+output_doc = os.path.join(os.path.dirname(__file__), "../output.txt")
 
 # Load documents
 reference_files, reference_docs = read_pdfs_from_folder(input_folder)
@@ -91,7 +87,14 @@ if similarity_scores is not None:
 
     # Bar Plot Visualization ----------------------------------------
     plt.figure(figsize=(10, 6))
-    sns.barplot(x="Reference Document", y="Cosine Similarity Percentage", data=results_df, palette="coolwarm")
+    sns.barplot(
+        x="Reference Document",
+        y="Cosine Similarity Percentage",
+        hue="Reference Document",  # Add this
+        data=results_df,
+        palette="coolwarm",
+        legend=False  # Disable legend
+    )
     plt.title("Cosine Similarity Bar Plot")
     plt.xlabel("Reference Document")
     plt.ylabel("Cosine Similarity Percentage")

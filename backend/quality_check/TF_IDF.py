@@ -72,9 +72,8 @@ def read_pdfs_from_folder(folder_path):
     documents = [read_pdf(pdf) for pdf in pdf_files]
     return documents
 
-input_folder = r"C:\Users\znkje\OneDrive\Desktop\Systems\RAG-project\backend\papers\input_papers\P3"
-output_doc = r"C:\Users\znkje\OneDrive\Desktop\Systems\RAG-project\backend\papers\output_reviews\S3.pdf"
-
+input_folder = os.path.join(os.path.dirname(__file__), "../papers/papers")
+output_doc = os.path.join(os.path.dirname(__file__), "../output.txt")
 doc = read_pdfs_from_folder(input_folder) + [read_pdf(output_doc)]
 
 tfidf = TFIDF(doc)

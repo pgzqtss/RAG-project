@@ -63,22 +63,24 @@ def analyze_document(file_path):
 
 # Plot graph -----------------------------------------------------------
 def plot_citation_distribution(actual_citations):
-    # Simulated citation distribution based on given data
-    bins = np.arange(0, 201, 10)  # Bin size of 10 references
-    data = [np.random.normal(45.07, (56 - 25) / 1.35, 96685)]  # Approximate normal distribution
+    # Simulated citation distribution
+    bins = np.arange(0, 201, 10)
+    data = [np.random.normal(45.07, (56 - 25) / 1.35, 96685)]  # Simulated normal distribution
 
-    plt.figure(figsize=(8, 5))
-    plt.hist(data, bins=bins, alpha=0.6, color='blue', edgecolor='black', label="Reference Distribution")
+    fig, ax = plt.subplots(figsize=(8, 5))  # Create a figure instance
+    ax.hist(data, bins=bins, alpha=0.6, color='blue', edgecolor='black', label="Reference Distribution")
 
     # Mark actual citation count
-    plt.axvline(actual_citations, color='red', linestyle='dashed', linewidth=2, label=f'Actual: {actual_citations}')
+    ax.axvline(actual_citations, color='red', linestyle='dashed', linewidth=2, label=f'Actual: {actual_citations}')
 
-    plt.xlabel("Number of References")
-    plt.ylabel("Article Count")
-    plt.title("Citation Count Distribution in Systematic Reviews")
-    plt.legend()
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.show()
+    ax.set_xlabel("Number of References")
+    ax.set_ylabel("Article Count")
+    ax.set_title("Citation Count Distribution in Systematic Reviews")
+    ax.legend()
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+    return fig  # Return the figure
+
 
 
 if __name__ == "__main__":

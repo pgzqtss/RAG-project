@@ -38,11 +38,10 @@ pdf_filename = 'quality_check_report.pdf'
 with PdfPages(pdf_filename) as pdf:
     
     # Citation Distribution Plot
-    plt.figure(figsize=(10, 6))
-    plot_citation_distribution(citation_count)  # Ensure this function correctly creates a plot
-    plt.title("Citation Distribution")
-    pdf.savefig()  # Save the figure into the PDF
-    plt.close()
+    fig = plot_citation_distribution(citation_count)  # Get the figure instance
+    pdf.savefig(fig)  # Save the returned figure
+    plt.close(fig)  # Ensure the figure is closed properly
+
 
     # Cosine Similarity Bar Plot
     if similarity_scores is not None:
@@ -58,6 +57,7 @@ with PdfPages(pdf_filename) as pdf:
         plt.xlabel("Reference Document")
         plt.ylabel("Cosine Similarity Percentage")
         plt.xticks(rotation=45)
+        plt.tight_layout()
         pdf.savefig()
         plt.close()
 
@@ -69,6 +69,7 @@ with PdfPages(pdf_filename) as pdf:
     plt.figure(figsize=(16, 10))
     sns.heatmap(filtered_results, annot=False, cmap='viridis')
     plt.title('TF-IDF Heatmap (Top 50 Words)')
+    plt.tight_layout()
     pdf.savefig()
     plt.close()
 
@@ -85,6 +86,7 @@ with PdfPages(pdf_filename) as pdf:
     plt.xlabel("Reference Document")
     plt.ylabel("BLEU Percentage")
     plt.xticks(rotation=45)
+    plt.tight_layout()
     pdf.savefig()
     plt.close()
 

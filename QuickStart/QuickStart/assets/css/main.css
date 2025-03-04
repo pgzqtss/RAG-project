@@ -1947,3 +1947,8 @@ section,
 .starter-section {
   /* Add your styles here */
 }
+
+/* 如果 header 有 .fixed-top 类，则紧接着的 main 往下留 80px */
+header.fixed-top + main {
+  margin-top: 80px;
+}

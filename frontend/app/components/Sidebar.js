@@ -42,6 +42,8 @@ export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
   useEffect(() => {
     const fetchHistory = async () => {
       if (user) {
+        console.log('FUCKME')
+        console.log(user)
         const user_id = (await queryID(user.username)).user_id[0];
         const response = (await queryUsersHistory(user_id)).result;
         setHistory(response);

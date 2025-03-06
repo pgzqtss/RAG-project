@@ -12,5 +12,8 @@ export async function upsertVectors(id) {
     return data;
   } catch (error) {
     console.error('Error upserting vectors:', error);
+    if (typeof window !== 'undefined') {
+      redirect('/500')
+    }
   }
 }

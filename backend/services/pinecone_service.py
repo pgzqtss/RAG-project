@@ -28,26 +28,6 @@ def initialise_pinecone():
         print(f'Index "{PINECONE_INDEX_NAME}" created successfully!')
     else:
         print(f'Index "{PINECONE_INDEX_NAME}" already exists.')
-        # clear_pinecone_index()
-
-# def clear_pinecone_index():
-#     ''' Clears all vectors in the existing Pinecone index without deleting the index itself. '''
-    
-#     # Delete the index
-#     pinecone.delete_index(PINECONE_INDEX_NAME)
-    
-#     # Create new index
-#     pinecone.create_index(
-#             name=PINECONE_INDEX_NAME,
-#             dimension=VECTOR_DIMENSION,
-#             metric=SEARCH_METRIC,
-#             spec=ServerlessSpec(
-#                 cloud=SPEC_CLOUD,
-#                 region=SPEC_REGION  
-#             )
-#         )
-    
-#     print(f'All vectors in index "{PINECONE_INDEX_NAME}" have been deleted.')
 
 def get_all_paper_ids():
     '''Get all stored paper IDs from Pinecone'''

@@ -21,7 +21,9 @@ export default function SystematicReview({ prompt, text, id }) {
       <div className='font-bold text-2xl text-center mb-4'>
         {prompt}
       </div>
-      <ShowFiles id={id} />
+      <div className='w-[700px]'>
+        <ShowFiles id={id} />
+      </div>
       <div className='w-[700px] h-full bg-gray-50 rounded-3xl overflow-auto'>
         <div className='text-md p-4'>
           <ReactMarkdown

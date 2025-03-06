@@ -28,9 +28,9 @@ export default function ShowFiles({ id }) {
           <ul className='grid grid-cols-6 gap-2 max-h-[90px] overflow-auto'>
             {files.map((file, index) => (
               <li key={index} className='col-span-1'>
-                <a href={`files/${id}/${file}`} target='_blank' rel='noopener noreferrer'>
+                <a href={`files/${id}/${file}`} target='_blank' rel='noopener noreferrer' className='w-full'>
                   <div
-                    className='flex items-center justify-between w-full bg-gray-100 border-[1px] border-gray-200 rounded-xl py-1 px-2 hover:bg-gray-200 mb-2'
+                    className='flex items-center justify-between w-full bg-gray-100 border-[1px] border-gray-200 rounded-xl py-1 px-2 hover:bg-gray-200 gap-y-2'
                   >
                     <span className='text-sm overflow-hidden whitespace-nowrap text-ellipsis flex-1'>
                       {file}

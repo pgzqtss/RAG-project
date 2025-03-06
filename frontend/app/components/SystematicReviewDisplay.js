@@ -4,6 +4,7 @@ import ShowFiles from './ShowFiles';
 
 const preprocessText = (text) => {
   text = text.replace(/\n/gi,'\n\n')
+  text = text.replace(/-/g, '')
   return text.replace(/(?<=\n)(?![*-])\n/gi, '&nbsp;\n');
 };
 
@@ -21,7 +22,6 @@ export default function SystematicReview({ prompt, text, id }) {
           <ReactMarkdown
             remarkPlugins={[remarkBreaks]}
             components={{
-              h1: ({ children }) => <h1 className='text-3xl font-bold'>{children}</h1>,
               h2: ({ children }) => <h2 className='text-2xl font-semibold'>{children}</h2>,
               h3: ({ children }) => <h3 className='text-xl font-semibold'>{children}</h3>,
               p: ({ children }) => <p>{children}</p>,

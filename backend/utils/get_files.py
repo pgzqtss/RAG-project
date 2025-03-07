@@ -11,5 +11,4 @@ def get_files(id):
             # Extract the filename without extension
             name_without_extension = os.path.splitext(filename)[0]
             files[name_without_extension] = full_path
-
     return files

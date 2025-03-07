@@ -1,23 +1,15 @@
-import re
 import os
+import re
 import sys
 import io
 import numpy as np
 import matplotlib.pyplot as plt
-from pypdf import PdfReader  # Use pypdf instead of PyPDF2
 from chardet import detect
+from utils.pdf_util import pdf_to_text
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-# Read file -------------------------------------------------
-def read_pdf(file_path):
-    try:
-        reader = PdfReader(file_path)
-        return " ".join(page.extract_text() or "" for page in reader.pages)
-    except Exception as e:
-        print(f"Error reading PDF: {str(e)}")
-        return ""
-
+# Read text file if applicable -------------------------------------------------
 def read_text_file(file_path):
     try:
         with open(file_path, 'rb') as f:
@@ -26,8 +18,8 @@ def read_text_file(file_path):
         with open(file_path, 'r', encoding=encoding, errors='replace') as f:
             return f.read()
     except Exception as e:
-        print(f"Error reading text file: {str(e)}")
-        return ""
+        print(f'Error reading text file: {str(e)}')
+        return ''
 
 # Citation check -------------------------------------------------
 def check_citation_count(review_text):
@@ -51,10 +43,10 @@ def check_citation_count(review_text):
 
 def analyze_document(file_path):
     # Read content
-    text = read_pdf(file_path) if file_path.endswith('.pdf') else read_text_file(file_path)
+    text = pdf_to_text(file_path) if file_path.endswith('.pdf') else read_text_file(file_path)
     
     if not text:
-        print("No content extracted from file.")
+        print('No content extracted from file.')
         return None
     
     # Count citations
@@ -68,25 +60,23 @@ def plot_citation_distribution(actual_citations):
     data = [np.random.normal(45.07, (56 - 25) / 1.35, 96685)]  # Simulated normal distribution
 
     fig, ax = plt.subplots(figsize=(8, 5))  # Create a figure instance
-    ax.hist(data, bins=bins, alpha=0.6, color='blue', edgecolor='black', label="Reference Distribution")
+    ax.hist(data, bins=bins, alpha=0.6, color='blue', edgecolor='black', label='Reference Distribution')
 
     # Mark actual citation count
     ax.axvline(actual_citations, color='red', linestyle='dashed', linewidth=2, label=f'Actual: {actual_citations}')
 
-    ax.set_xlabel("Number of References")
-    ax.set_ylabel("Article Count")
-    ax.set_title("Citation Count Distribution in Systematic Reviews")
+    ax.set_xlabel('Number of References')
+    ax.set_ylabel('Article Count')
+    ax.set_title('Citation Count Distribution in Systematic Reviews')
     ax.legend()
     ax.grid(axis='y', linestyle='--', alpha=0.7)
 
     return fig  # Return the figure
 
-
-
-if __name__ == "__main__":
-    file_path = os.path.join(os.path.dirname(__file__), "../output.txt")
+if __name__ == '__main__':
+    file_path = os.path.join(os.path.dirname(__file__), '../output.txt')
     
     citation_count = analyze_document(file_path)
     if citation_count is not None:
-        print(f"Citation Count: {citation_count}")
+        print(f'Citation Count: {citation_count}')
         plot_citation_distribution(citation_count)

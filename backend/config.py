@@ -9,7 +9,7 @@ PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Pinecone Index Initialisation 
-PINECONE_INDEX_NAME = 'Rag-n-Bones'
+PINECONE_INDEX_NAME = 'rag-n-bones'
 SEARCH_METRIC = 'cosine'
 SPEC_CLOUD = 'aws'
 SPEC_REGION = 'us-east-1'

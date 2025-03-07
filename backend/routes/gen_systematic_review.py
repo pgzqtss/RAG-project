@@ -1,6 +1,7 @@
 from services.pinecone_service import search_pinecone, get_all_paper_ids
 from utils.truncate_previous_sections import _get_fixed_limit_previous_sections
 from utils.get_files import get_files
+from utils.store_as_pdf import store_pdf
 from services.section_prompts_service import (
   generate_background_section,
   generate_methods_section,
@@ -72,8 +73,9 @@ def generate_full_systematic_review():
     )
 
     # Join all sections into one
-    combined_sections = ''.join(systematic_review[section] + '\n' for section in systematic_review)
+    combined_sections = ''.join(systematic_review[section] + '\n' for section in systematic_review).replace('-', '')
 
+    store_pdf(text=combined_sections[:-1], id=id)
     print(f'Systematic Review: {combined_sections[:-1]}')
 
     # Remove last '\n'

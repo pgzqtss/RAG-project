@@ -1,7 +1,7 @@
 import os
 
 def get_files(id):
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'files', str(id)))
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'files', str(id)))
     files = {}
 
     for filename in os.listdir(path):

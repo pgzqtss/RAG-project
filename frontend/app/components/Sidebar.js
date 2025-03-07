@@ -104,15 +104,12 @@ export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
                             </div>
                             {editOpenPromptId === prompt_id && (
                               <div
-                                className='absolute left-0 transform -translate-x-1 mt-2 rounded-md w-48 border z-50 bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden'
+                                className='absolute left-0 transform -translate-x-1 mt-2 rounded-md w-48 border z-50 bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden hover:bg-gray-50'
                                 onMouseLeave={() => setEditOpenPromptId(null)}
                               >
                                 <div className='py-1'>
-                                  <button className='block w-full px-4 py-2 text-left text-sm text-gray-700 border-b-2 hover:bg-gray-50'>
-                                    Change Name
-                                  </button>
                                   <button 
-                                    className='block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50'
+                                    className='block w-full px-4 py-2 text-left text-sm text-gray-700'
                                     onClick={(event) => delete_history(prompt_id, refreshHistory, event)}
                                   >
                                     Delete

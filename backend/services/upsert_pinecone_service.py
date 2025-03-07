@@ -7,9 +7,6 @@ def upsert_all_chunks(text_chunks, paper_id):
     '''Stores document chunks in Pinecone DB under Systematic Review namespaces.'''
     index = pinecone.Index(PINECONE_INDEX_NAME)
 
-    # if PINECONE_INDEX_NAME not in index.list_indexes().names():
-    #     raise ValueError(f'⚠️ Index "{PINECONE_INDEX_NAME}" not found! Run `initialize_pinecone.py` first.')
-
     # ✅ Get existing namespaces to avoid re-storing sections
     index_stats = index.describe_index_stats()
     existing_namespaces = index_stats.get('namespaces', {})

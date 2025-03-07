@@ -3,6 +3,4 @@ __pycache__
 .coverage
 .vscode
 
-/frontend/files
-/files
-
+/frontend/public/files

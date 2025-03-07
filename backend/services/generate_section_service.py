@@ -77,7 +77,7 @@ def generate_section(results, query, section_title, section_prompt,
     - **Format:** Use markdown headings and subheadings where ## will be the main heading and subheadings should be ###. 
     - **Word Limit:** Aim for **{max_length} words**, prioritizing essential details.
     - **Clarity & Coherence:** Ensure smooth readability and logical consistency.
-    - **MUST NOT:** Do not include any citation into the text. Do not include any markdown horizontal rules such as ---.
+    - **MUST NOT:** Do not include in-text citations.
 
     ## 📝 **Now, generate the full {section_title} section:**
     ''')

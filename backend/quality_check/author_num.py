@@ -2,6 +2,8 @@ import os
 import re
 import pdfplumber
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from collections import Counter
 from langchain.schema import SystemMessage, HumanMessage

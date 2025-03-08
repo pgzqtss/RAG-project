@@ -70,7 +70,7 @@ def generate_full_systematic_review():
     )
 
     # Join all sections into one
-    combined_sections = ''.join(systematic_review[section] + '\n' for section in systematic_review).replace('-', '')
+    combined_sections = ''.join(systematic_review[section] + '\n' for section in systematic_review).replace('---', '')
 
     store_pdf(text=combined_sections[:-1], id=id)
     print(f'Systematic Review: {combined_sections[:-1]}')

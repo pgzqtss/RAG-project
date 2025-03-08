@@ -2,11 +2,12 @@ import os
 import re
 import platform
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pdfplumber
 from wordcloud import WordCloud
-from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage
 import chardet
 from collections import Counter

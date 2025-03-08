@@ -18,6 +18,7 @@ export default function Page({ params }) {
 
   const [isUpsertLoading, setUpsertLoading] = useState(false);
   const [isGenerateLoading, setGenerateLoading] = useState(false);
+  const [isQualityLoading, setQualityLoading] = useState(false);
   const [displayText, setDisplayText] = useState(false);
   const [generate, setGenerate] = useState(false);
   const [input, setInput] = useState('');
@@ -54,6 +55,7 @@ export default function Page({ params }) {
       await GetSystematicReview({
         setUpsertLoading,
         setGenerateLoading,
+        setQualityLoading,
         id,
         prompt,
         toggleUpdate,
@@ -70,6 +72,7 @@ export default function Page({ params }) {
     <div className='flex h-full overflow-hidden'>
       {isUpsertLoading && <Loading message='Uploading PDFs' />}
       {isGenerateLoading && <Loading message='Generating Systematic Review' />}
+      {isQualityLoading && <Loading message='Assessing Review Quality' />}
       {displayText && <SystematicReview prompt={input} text={output} id={id} />}
     </div>
   );

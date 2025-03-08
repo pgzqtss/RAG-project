@@ -2,8 +2,9 @@ import { queryID } from './query_user';
 import { save } from './save';
 import { upsert } from './upsert';
 import { generate } from './generate';
+import { check_quality } from './check_quality';
 
-export async function GetSystematicReview({ setUpsertLoading, setGenerateLoading, id, prompt, toggleUpdate, setGenerate }) {
+export async function GetSystematicReview({ setUpsertLoading, setGenerateLoading, setQualityLoading, id, prompt, toggleUpdate, setGenerate }) {
   setUpsertLoading(true);
   try {
     await upsert(id);
@@ -22,13 +23,18 @@ export async function GetSystematicReview({ setUpsertLoading, setGenerateLoading
     console.log(username)
     const user_id = (await queryID(username)).user_id;
     await save(user_id, id, prompt, systematic_review);
-    setGenerateLoading(false);
-    setGenerate(false);
-    toggleUpdate();
-    
-    return systematic_review
-    
   } catch (error) {
     console.error('Generation failed:', error);
+  }
+  setGenerateLoading(false);
+
+  setQualityLoading(true);
+  try {
+    await check_quality(id);
+    setQualityLoading(false);
+    setGenerate(false);
+    toggleUpdate();
+  } catch (error) {
+    console.error('Quality checking failed:', error);
   }
 }

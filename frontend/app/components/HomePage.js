@@ -6,7 +6,7 @@ export default function Home() {
         Welcome to Rag-n-Bones
       </div>
       <p className='text-lg mt-2'>Log in to start exploring research insights.</p>
-      <p className='text-lg mb-[30%]'>Upload papers, ask questions, and generate systematic reviews powered by AI.</p>
+      <p className='text-lg mb-[30%]'>Upload papers and generate systematic reviews powered by AI.</p>
     </div>
   )
 }

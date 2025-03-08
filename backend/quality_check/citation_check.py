@@ -1,23 +1,15 @@
-import re
 import os
+import re
 import sys
 import io
 import numpy as np
 import matplotlib.pyplot as plt
-from PyPDF2 import PdfReader
 from chardet import detect
+from utils.pdf_util import pdf_to_text
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-# Read file -------------------------------------------------
-def read_pdf(file_path):
-    try:
-        reader = PdfReader(file_path)
-        return " ".join(page.extract_text() or "" for page in reader.pages)
-    except Exception as e:
-        print(f"Error reading PDF: {str(e)}")
-        return ""
-
+# Read text file if applicable -------------------------------------------------
 def read_text_file(file_path):
     try:
         with open(file_path, 'rb') as f:
@@ -26,34 +18,35 @@ def read_text_file(file_path):
         with open(file_path, 'r', encoding=encoding, errors='replace') as f:
             return f.read()
     except Exception as e:
-        print(f"Error reading text file: {str(e)}")
-        return ""
+        print(f'Error reading text file: {str(e)}')
+        return ''
 
 # Citation check -------------------------------------------------
 def check_citation_count(review_text):
     # Using regex patterns
     citation_patterns = [
-        r'\(([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+et\s+al\.?,\s+\d{4}))\)',
-        r'\(([A-Z][a-z]+(?:\s+&\s+[A-Z][a-z]+)+,\s+\d{4})\)',
-        r'\b(10\.\d{4,}/[\w\.\-/]+)\b',
-        r'doi\.org/(10\.\d{4,}/[\w\.\-/]+)\b',
-        r'\[(\d{1,3})\]'
+        r'\(([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+et\s+al\.?,\s+\d{4}))\)',  # Matches (Author et al., 2023)
+        r'\(([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+,\s+\d{4})\)',  # Matches (Author Another Author, 2022)
+        r'\(([A-Z][a-z]+(?:\s+&\s+[A-Z][a-z]+)+,\s+\d{4})\)',  # Matches (Author & Another Author, 2022)
+        r'\b(10\.\d{4,}/[\w\.\-/]+)\b',  # Matches DOIs
+        r'doi\.org/(10\.\d{4,}/[\w\.\-/]+)\b',  # Matches DOI URLs
+        r'\[(\d{1,3})\]'  # Matches numbered citations like [1]
     ]
     
     # Set -> ensure unique citations
     found_citations = set()
     for pattern in citation_patterns:
-        # Find all matches of each pattern in the review text and add the to set
+        # Find all matches of each pattern in the review text and add them to the set
         found_citations.update(re.findall(pattern, review_text, re.IGNORECASE))
     
     return len(found_citations)
 
 def analyze_document(file_path):
     # Read content
-    text = read_pdf(file_path) if file_path.endswith('.pdf') else read_text_file(file_path)
+    text = pdf_to_text(file_path) if file_path.endswith('.pdf') else read_text_file(file_path)
     
     if not text:
-        print("No content extracted from file.")
+        print('No content extracted from file.')
         return None
     
     # Count citations
@@ -61,37 +54,29 @@ def analyze_document(file_path):
     return citation_count
 
 # Plot graph -----------------------------------------------------------
-import numpy as np
-import matplotlib.pyplot as plt
-
 def plot_citation_distribution(actual_citations):
-    # Simulated citation distribution based on given data
-    bins = np.arange(0, 201, 10)  # Bin size of 10 references
-    data = [np.random.normal(45.07, (56 - 25) / 1.35, 96685)]  # Approximate normal distribution
+    # Simulated citation distribution
+    bins = np.arange(0, 201, 10)
+    data = [np.random.normal(45.07, (56 - 25) / 1.35, 96685)]  # Simulated normal distribution
 
-    plt.figure(figsize=(8, 5))
-    plt.hist(data, bins=bins, alpha=0.6, color='blue', edgecolor='black', label="Reference Distribution")
+    fig, ax = plt.subplots(figsize=(8, 5))  # Create a figure instance
+    ax.hist(data, bins=bins, alpha=0.6, color='blue', edgecolor='black', label='Reference Distribution')
 
     # Mark actual citation count
-    plt.axvline(actual_citations, color='red', linestyle='dashed', linewidth=2, label=f'Actual: {actual_citations}')
+    ax.axvline(actual_citations, color='red', linestyle='dashed', linewidth=2, label=f'Actual: {actual_citations}')
 
-    plt.xlabel("Number of References")
-    plt.ylabel("Article Count")
-    plt.title("Citation Count Distribution in Systematic Reviews")
-    plt.legend()
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.show()
+    ax.set_xlabel('Number of References')
+    ax.set_ylabel('Article Count')
+    ax.set_title('Citation Count Distribution in Systematic Reviews')
+    ax.legend()
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
 
+    return fig  # Return the figure
 
-if __name__ == "__main__":
-    file_path = r"C:\\Users\\znkje\\OneDrive\\Desktop\\Systems\\RAG-project\\backend\\papers\\output_reviews\\S2.pdf"
+if __name__ == '__main__':
+    file_path = os.path.join(os.path.dirname(__file__), '../output.txt')
     
     citation_count = analyze_document(file_path)
     if citation_count is not None:
-        print(f"Citation Count: {citation_count}")
+        print(f'Citation Count: {citation_count}')
         plot_citation_distribution(citation_count)
-
-'''
-Normal distribution for link below:
-https://quantifyinghealth.com/how-many-references-to-use-for-research-papers/
-'''

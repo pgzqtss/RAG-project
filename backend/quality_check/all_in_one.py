@@ -9,7 +9,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from matplotlib.backends.backend_pdf import PdfPages
 from collections import Counter
-from citation_check import analyze_document, plot_citation_distribution
 from cosine_similarity import CosineSimilarityChecker, read_pdfs_from_folder, read_pdf
 from TF_IDF import TFIDF
 from BLEU import BLEUScorer
@@ -23,9 +22,6 @@ output_doc = os.path.join(os.path.dirname(__file__), "../output.txt")
 # Load documents for citation, cosine similarity, TF-IDF, and BLEU
 reference_files, reference_docs = read_pdfs_from_folder(input_folder)
 hypothesis_doc = read_pdf(output_doc)
-
-# Citation Count
-citation_count = analyze_document(output_doc)
 
 # Cosine Similarity
 similarity_checker = CosineSimilarityChecker(reference_docs, hypothesis_doc)
@@ -82,11 +78,6 @@ with PdfPages(pdf_filename) as pdf:
         plt.close()
     else:
         print(f"Warning: {wordcloud_image} does not exist and will be skipped.")
-
-    # Citation Distribution Plot
-    fig = plot_citation_distribution(citation_count)  # Get the figure instance
-    pdf.savefig(fig)  # Save the returned figure
-    plt.close(fig)  # Ensure the figure is closed properly
 
     # Cosine Similarity Bar Plot
     if similarity_scores is not None:

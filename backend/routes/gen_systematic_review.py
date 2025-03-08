@@ -19,9 +19,6 @@ def generate_full_systematic_review():
     data = request.json
     query = data.get('prompt')
     id = data.get('id')
-
-    # (ISSUE: GETS ALL PAPERS IN INDEX NOT JUST THE ONES FOR ONE SYSTEMATIC REVIEW)
-    # paper_ids = get_all_paper_ids()  # ✅ Get all stored paper IDs 
     
     paper_ids = [paper for paper in get_files(id)]
 

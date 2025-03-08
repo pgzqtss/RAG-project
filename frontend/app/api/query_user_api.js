@@ -12,5 +12,6 @@ export async function queryUser(username) {
     return data;
   } catch (error) {
     console.error('Error searching for user:', error);
+    queryUser(username)
   }
 }

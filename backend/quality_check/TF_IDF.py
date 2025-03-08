@@ -10,13 +10,10 @@ Row: Each row represents a document
 Column: Each column represents a unique word
 Value: The TF-IDF score for each word in each document
 '''
-import os
+
 import math
 from collections import Counter
 import pandas as pd
-import fitz  # PyMuPDF
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 class TFIDF:
     def __init__(self, documents):
@@ -59,36 +56,3 @@ class TFIDF:
             tfidf = {word: tf.get(word, 0) * self.idf[word] for word in self.vocab}
             tfidf_results.append(tfidf)
         return pd.DataFrame(tfidf_results)
-
-def read_pdf(file_path):
-    doc = fitz.open(file_path)
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
-
-def read_pdfs_from_folder(folder_path):
-    pdf_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.pdf')]
-    documents = [read_pdf(pdf) for pdf in pdf_files]
-    return documents
-
-input_folder = os.path.join(os.path.dirname(__file__), "../papers/papers")
-output_doc = os.path.join(os.path.dirname(__file__), "../output.txt")
-doc = read_pdfs_from_folder(input_folder) + [read_pdf(output_doc)]
-
-tfidf = TFIDF(doc)
-results = tfidf.calculate_tfidf()
-print(results)
-
-# Heatmap visualization ----------------------------------------
-# Calculate the average TF-IDF score for each word
-average_tfidf = results.mean(axis=0)
-# Select the top 20 words with the highest average scores
-top_words = average_tfidf.nlargest(50).index
-# Filter the DataFrame to include only these top words
-filtered_results = results[top_words]
-
-plt.figure(figsize=(16, 10))
-sns.heatmap(filtered_results, annot=False, cmap='viridis')
-plt.title('TF-IDF Heatmap (Top 50 Words)')
-plt.show()

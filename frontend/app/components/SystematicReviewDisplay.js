@@ -1,6 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
-import ShowFiles from './ShowFiles';
+import TaskBar from './TaskBar';
 
 const preprocessText = (text) => {
   text = text.replace(/\n/gi,'\n\n')
@@ -15,7 +15,7 @@ export default function SystematicReview({ prompt, text, id }) {
         {prompt}
       </div>
       <div className='w-[700px]'>
-        <ShowFiles id={id} />
+        <TaskBar id={id} />
       </div>
       <div className='w-[700px] h-full bg-gray-50 rounded-3xl overflow-auto'>
         <div className='text-md p-4'>

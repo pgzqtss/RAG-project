@@ -5,7 +5,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import PdfPages
-from quality_check.citation_check import analyze_document, plot_citation_distribution
 from quality_check.cosine_similarity import CosineSimilarityChecker
 from quality_check.TF_IDF import TFIDF
 from quality_check.BLEU import BLEUScorer
@@ -27,9 +26,6 @@ def generate_quality_check_graphs():
     # Load documents for citation, cosine similarity, TF-IDF, and BLEU
     reference_files, reference_docs = read_pdfs(input_path)
     hypothesis_doc = pdf_to_text(output_path)
-
-    # Citation Count
-    citation_count = analyze_document(output_path)
 
     # Cosine Similarity
     similarity_checker = CosineSimilarityChecker(reference_docs, hypothesis_doc)
@@ -85,11 +81,6 @@ def generate_quality_check_graphs():
             plt.close()
         else:
             print(f'Warning: {wordcloud_image} does not exist and will be skipped.')
-
-        # Citation Distribution Plot
-        # fig = plot_citation_distribution(citation_count)  # Get the figure instance
-        # pdf.savefig(fig)  # Save the returned figure
-        # plt.close(fig)  # Ensure the figure is closed properly
 
         # Cosine Similarity Bar Plot
         if similarity_scores is not None:

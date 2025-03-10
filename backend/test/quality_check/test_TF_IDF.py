@@ -54,26 +54,3 @@ def test_calculate_tfidf(tfidf_instance):
     tfidf_results = tfidf_instance.calculate_tfidf()
     assert isinstance(tfidf_results, pd.DataFrame)
     assert not tfidf_results.empty
-
-# # Test read_pdf
-# def test_read_pdf():
-#     with patch("TF_IDF.fitz.open") as mock_fitz:
-#         mock_doc = MagicMock()
-#         mock_page = MagicMock()
-#         mock_page.get_text.return_value = "Sample text from PDF."
-#         mock_doc.__iter__.return_value = [mock_page]
-#         mock_fitz.return_value = mock_doc
-
-#         text = pdf_to_text("dummy.pdf")
-#         assert text == "Sample text from PDF."
-
-# # Test read_pdfs_from_folder
-# def test_read_pdfs_from_folder():
-#     with patch("TF_IDF.os.listdir", return_value=["doc1.pdf", "doc2.pdf"]), \
-#          patch("TF_IDF.read_pdf", side_effect=["Text from doc1", "Text from doc2"]):
-        
-#         documents = read_pdfs("dummy_folder")
-        
-#         assert len(documents) == 2
-#         assert documents[0] == "Text from doc1"
-#         assert documents[1] == "Text from doc2"

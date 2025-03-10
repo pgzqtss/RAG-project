@@ -58,30 +58,6 @@ def test_calculate_similarity(cosine_similarity_checker, sample_embeddings):
         assert isinstance(overall_score, float)
         assert len(similarity_scores) == 2  # Two reference documents
 
-# def test_read_pdf():
-#     with patch("cosine_similarity.fitz.open") as mock_fitz:
-#         mock_doc = MagicMock()
-#         mock_page = MagicMock()
-#         mock_page.get_text.return_value = "Sample text from PDF."
-#         mock_doc.__iter__.return_value = [mock_page]
-#         mock_fitz.return_value = mock_doc
-
-#         text = pdf_to_text("dummy.pdf")
-#         assert text == "Sample text from PDF."
-
-# def test_read_pdfs_from_folder(tmp_path):
-#     pdf1 = tmp_path / "doc1.pdf"
-#     pdf1.write_text("Fake PDF content 1")
-#     pdf2 = tmp_path / "doc2.pdf"
-#     pdf2.write_text("Fake PDF content 2")
-
-#     with patch("cosine_similarity.read_pdf", side_effect=["Fake PDF content 1", "Fake PDF content 2"]):
-#         file_paths, docs = read_pdfs(tmp_path)
-
-#         assert len(file_paths) == 2
-#         assert docs[0] == "Fake PDF content 1"
-#         assert docs[1] == "Fake PDF content 2"
-
 def test_fetch_embeddings_error(cosine_similarity_checker):
     with patch("config.bert_model.encode", side_effect=Exception("Embedding error")):
         embeddings = cosine_similarity_checker.fetch_embeddings("Sample text")

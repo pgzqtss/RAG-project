@@ -80,8 +80,8 @@ export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
             </div>
           </button>
           {history.length > 0 && (
-            <div className='border-t-2'>
-              <div className='mt-2'>
+            <div className='border-t-2 flex flex-col h-full min-h-0'>
+              <div className='mt-2 flex-1 overflow-y-auto max-h-[calc(100vh-150px)]'>
                 <ul>
                   {history.map(([prompt_id, user_input]) => (
                     <li key={prompt_id}>

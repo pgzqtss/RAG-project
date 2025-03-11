@@ -1,5 +1,18 @@
+<img src='frontend/public/rag-icon.png' alt='Rag-n-Bones Icon' width='400'/>
+
 # Rag-n-Bones
 Rag-n-Bones is a web application that uses an input of PDFs to generate systematic reviews utilising Pinecone indexing and OpenAI's GPT models.
+
+## Features
+
+- User Authentication
+- Prompt Input
+- PDF Upload
+- Systematic Review Generation
+- File Input Access
+- Export as PDF
+- Quality Check Graphs
+- Systematic Review History
 
 ## Deployment Instructions
 
@@ -33,13 +46,17 @@ Rag-n-Bones is a web application that uses an input of PDFs to generate systemat
 
 | Environment Variable | Description | Source
 | ----------- | ----------- | ---------- |
-| PINECONE_API_KEY | API key for using Pinecone as a vector database | <a href='https://www.pinecone.io'> Pinecone <a/> |
-| PINECONE_INDEX_NAME | Name of an index to store and read from all vectors | ^| 
+| PINECONE_API_KEY | API key for using Pinecone as a vector database | <a href='https://www.pinecone.io'> Pinecone <a/> | 
 | OPENAI_API_KEY | API key for use of OpenAI's GPT 3.5 Turbo model | <a href='https://platform.openai.com/docs/overview'> OpenAI API Platform <a/>
 | MYSQL_PASSWORD | Personal password for MySQL database (empty if none) | |
-    
 
-### 4. Start MySQL server
+### 4. Modify `config.py` as needed
+The `config.py` file in `/backend` manages key settings for the application, including:
+- Pinecone initialisation for vector storage and retrieval.
+- MySQL configuration for database connectivity.
+- Embedding and OpenAI model settings for text processing and generation.
+
+### 5. Start MySQL server
 
 #### Mac
 ```
@@ -51,22 +68,43 @@ Rag-n-Bones is a web application that uses an input of PDFs to generate systemat
 ~ net start mysql
 ```
 
-### 5. Create the MySQL database
+### 6. Create the MySQL database
 ```
 ~ cd backend
 ~ mysql -u root -p < schema.sql
 ```
 
-### 6. Run the backend
+### 7. Run the backend
 ```
 ~ cd backend
 ~ python3 app.py
 ```
 
-### 7. Run the frontend
+### 8. Run the frontend
 ```
 ~ cd frontend
 ~ npm run dev
 ```
 
 The Next.js app will run on <a href='http:/localhost:3000'>http://localhost:3000</a>
+
+## Testing Instructions
+
+### Backend
+
+### 1. Navigate to the backend directory:
+```
+~ cd backend
+```
+
+### 2. Install the dependencies if not already installed:
+```
+~ pip install -r requirements.txt
+```
+
+### 3. Run the tests using `pytest`:
+```
+~ pytest
+```
+
+This will execute all the tests in the `tests` directory and provide a summary of the results.

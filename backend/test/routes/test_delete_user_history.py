@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 import pytest
 from flask import Flask
 
-# Dummy 模拟数据库连接
+# Dummy classes to simulate database behavior
 class DummyCursor:
     def execute(self, query, params):
         pass
@@ -21,10 +21,10 @@ class DummyConnection:
     def close(self):
         pass
 
-# 导入 delete_user_history 路由
+# Import the delete_user_history route
 from routes.delete_user_history import delete_user_history
 
-# 创建 Flask app 并注册路由
+# Create a Flask app and register the route
 app = Flask(__name__)
 app.testing = True
 import __main__
@@ -44,7 +44,6 @@ def test_delete_user_history(client, monkeypatch):
     assert "systematic review successfully" in data.get("message", "").lower()
 
 if __name__ == '__main__':
-    # 直接运行 main 函数进行测试
     client_instance = app.test_client()
     test_delete_user_history(client_instance, monkeypatch=pytest.MonkeyPatch())
-    print("delete_user_history 测试通过")
+    print("delete_user_history test passed")

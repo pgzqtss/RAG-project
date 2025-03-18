@@ -15,6 +15,7 @@ if __name__ == '__main__':
         register_user,
         login_user,
         upsert_vectors,
-        gen_systematic_review
+        gen_systematic_review,
+        gen_quality_check
     )
     app.run(port=5000)

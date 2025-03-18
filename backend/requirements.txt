@@ -22,6 +22,7 @@ tf-keras
 # PDF Processing
 pymupdf
 pypdf
+markdown-pdf
 
 # Web Application Framework
 flask
@@ -30,6 +31,14 @@ flask-cors
 # Encryption and Database
 bcrypt
 mysql-connector-python
+
+# Quality Assessment
+seaborn
+pdfplumber
+chardet
+wordcloud
+scikit-learn
+nltk
 
 # Miscellaneous
 pytest

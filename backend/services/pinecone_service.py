@@ -51,7 +51,7 @@ def query_with_namespace(paper_id, section, query_vector, top_k, index):
     results = index.query(vector=query_vector, top_k=top_k, namespace=namespace, include_metadata=True)
 
     if results['matches']:
-        print(f'✅ Found {len(results['matches'])} results in {namespace}')
+        print(f'✅ Found {len(results["matches"])} results in {namespace}')
         # for match in results['matches']:
         #     print(f'📄 Fragment content: {match['metadata']['text'][:100]}...')
         # all_results.extend([match['metadata']['text'] for match in results['matches']])

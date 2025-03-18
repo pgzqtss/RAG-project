@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 import pytest
 from flask import Flask
 
-# Setup the Flask app and assign it to __main__.app
+# Set up Flask app
 import __main__
 from flask import Flask
 app = Flask(__name__)
@@ -31,7 +31,7 @@ def test_gen_systematic_review(client, monkeypatch):
                           lambda results, query, chunk_size, previous_sections: "Discussion")
     monkeypatch.setattr("services.section_prompts_service.generate_conclusion_section", 
                           lambda results, query, chunk_size, previous_sections: "Conclusion")
-    # Override Pinecone instance to avoid real API calls:
+    # Override Pinecone instance to avoid real API calls
     class DummyIndex:
         def describe_index_stats(self):
             return {"namespaces": {"systematic_review/dummy/Background": {"vector_count": 2}}}

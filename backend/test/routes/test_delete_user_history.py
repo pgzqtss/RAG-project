@@ -21,7 +21,7 @@ class DummyConnection:
     def close(self):
         pass
 
-# Setup the Flask app and assign it to __main__.app
+# Set up Flask app and assign it to __main__.app so that routes can import it
 import __main__
 from flask import Flask
 app = Flask(__name__)
@@ -47,4 +47,3 @@ if __name__ == '__main__':
     client_instance = app.test_client()
     test_delete_user_history(client_instance, monkeypatch=pytest.MonkeyPatch())
     print("delete_user_history test passed")
-

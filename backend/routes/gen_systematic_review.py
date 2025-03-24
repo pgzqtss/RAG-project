@@ -20,9 +20,23 @@ def generate_full_systematic_review():
     query = data.get('prompt')
     id = data.get('id')
     
+
+    if not id:
+        return jsonify({"error": "Missing user ID."}), 400
+
+    if query is None:
+        return jsonify({"error": "Missing prompt."}), 400
+
+    if not isinstance(query, str) or not query.strip():
+        return jsonify({"error": "Prompt cannot be empty."}), 400
+    
+    
     paper_ids = [paper for paper in get_files(id)]
 
     systematic_review = {}  # Dictionary to store all generated sections
+
+    
+    
 
     print('🔍 Generating Background section...')
     background_results = search_pinecone(query, paper_ids=paper_ids, section='Background', top_k=50)

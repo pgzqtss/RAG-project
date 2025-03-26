@@ -80,4 +80,5 @@ def test_generate_full_systematic_review(client, monkeypatch):
 if __name__ == '__main__':
     client_instance = app.test_client()
     test_generate_full_systematic_review(client_instance, monkeypatch=pytest.MonkeyPatch())
+
     print("test_generate_full_systematic_review done.")

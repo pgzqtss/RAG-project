@@ -35,7 +35,7 @@ def test_save_history(client, monkeypatch):
     monkeypatch.setattr("routes.save_history.connect_to_database", lambda: DummyConnection())
     payload = {
         "user_id": [1],
-        "prompt_id": "dummy_id",
+        "prompt_id":999999,
         "prompt": "dummy prompt",
         "systematic_review": "dummy review"
     }

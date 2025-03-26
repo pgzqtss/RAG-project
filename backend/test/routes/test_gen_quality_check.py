@@ -65,4 +65,6 @@ def test_gen_quality_check(client, monkeypatch):
 if __name__ == '__main__':
     client_instance = app.test_client()
     test_gen_quality_check(client_instance, monkeypatch=pytest.MonkeyPatch())
+
     print("test_gen_quality_check done.")
+

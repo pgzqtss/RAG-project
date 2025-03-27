@@ -67,6 +67,7 @@ The `config.py` file in `/backend` manages key settings for the application, inc
 ```
 ~ net start mysql
 ```
+Start in cmd through administrator rights
 
 ### 6. Create the MySQL database
 ```
@@ -74,17 +75,20 @@ The `config.py` file in `/backend` manages key settings for the application, inc
 ~ mysql -u root -p < schema.sql
 ```
 
-### 7. Run the backend
+### 7. Run the backend and the frontend at the same time
+1.
 ```
 ~ cd backend
 ~ python3 app.py
 ```
+ (Could run in terminal)
 
-### 8. Run the frontend
+2.
 ```
 ~ cd frontend
 ~ npm run dev
 ```
+(Could run in Command Prompt (cmd) for Window)
 
 The Next.js app will run on <a href='http:/localhost:3000'>http://localhost:3000</a>
 

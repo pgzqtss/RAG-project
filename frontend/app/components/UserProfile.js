@@ -7,10 +7,17 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignup
   const { user, logout } = useAuth();
   const [isMenuOpen, setMenuOpen] = useState(false);
 
-  const toggleMenuOpen = () => { setMenuOpen(!isMenuOpen); }
+  const toggleMenuOpen = () => {
+    setMenuOpen(!isMenuOpen);
+  };
 
-  const refreshPage = () => {
-    window.location.reload();
+  const handleLogout = () => {
+    localStorage.setItem('isLoggingOut', 'true');
+    setMenuOpen(false); 
+
+    setTimeout(() => {
+      logout(); 
+    }, 1000); // 等待动画播放后再登出
   };
 
   return (
@@ -27,16 +34,16 @@ export default function UserProfile({ toggleLoginOpen, isLoginOpen, toggleSignup
               </div>
               <div className='flex gap-x-2 font-medium text-lg mr-4'>
                 {user.username}
-                <img src='angle-down.svg' alt='Dropdown Arrow' height='16' width='16'></img>
+                <img src='angle-down.svg' alt='Dropdown Arrow' height='16' width='16' />
               </div>
             </div>
           </button>
           {isMenuOpen && (
-            <div className='absolute right-0 z-10 mt-[80pt] mr-4 w-48 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden'>
+            <div className='absolute right-0 z-10 mt-[80pt] mr-4 w-48 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5'>
               <div className='py-1 hover:bg-gray-50'>
                 <button
                   type='button'
-                  onClick={() => { logout(); refreshPage(); }}
+                  onClick={handleLogout}
                   className='block w-full px-4 py-2 text-left text-sm text-gray-700'
                 >
                   Log Out

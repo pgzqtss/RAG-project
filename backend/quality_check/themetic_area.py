@@ -76,13 +76,15 @@ def extract_thematic_area(text):
         return ''
 
 def generate_wordcloud(areas, id, output_file='thematic_wordcloud.png'):
-    # Clean each area by removing newlines and extra spaces
-    output_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'output', str(id), str(output_file)))
+    output_path = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'output', str(id), str(output_file)
+    ))
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     filtered = []
     for a in areas:
         cleaned = a.strip().lower()
-        # Replace any newline characters with space and collapse multiple spaces
         cleaned = re.sub(r'\s+', ' ', cleaned.replace('\n', ' ').replace('\r', ' '))
         if (cleaned and len(cleaned) > 1 
             and cleaned not in MEDICAL_STOPWORDS 

@@ -28,8 +28,8 @@ export default function App() {
 
   return (
     <AuthProvider>
-      {showLogin && <LoggingInScreen />}  {/* 登录动画 */}
-      {showLogout && <LogoutScreen />}    {/* 登出动画 */}
+      {showLogin && <LoggingInScreen />}  {/* Log in */} 
+      {showLogout && <LogoutScreen />}    {/* Logout */}
       <MainContent user={user} />
     </AuthProvider>
   );

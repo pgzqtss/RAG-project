@@ -9,14 +9,13 @@
     transition: all 0.3s ease;
   }
 
-  /* 输入框样式 */
   .textarea {
     width: 100%;
     min-height: 100px;
     padding: 12px;
     margin: 0;
-    background-color: white; /* 背景纯白 */
-    border: none; /* 无边框 */
+    background-color: white;
+    border: none;
     outline: none;
     font-size: 16px;
     color: #333;
@@ -24,14 +23,12 @@
     border-radius: 12px;
   }
 
-  /* 按钮组样式 */
   .button-group {
     display: flex;
     justify-content: space-between;
     margin-top: 8px;
   }
 
-  /* 按钮样式 */
   .send-button {
     background-color: white;
     color: #333;
@@ -39,7 +36,7 @@
     border-radius: 12px;
     font-size: 16px;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* 按钮阴影 */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
 
   .send-button:hover {

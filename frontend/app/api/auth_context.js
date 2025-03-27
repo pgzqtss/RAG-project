@@ -6,7 +6,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [showLogout, setShowLogout] = useState(false);
-  const [showLogin, setShowLogin] = useState(false); // 登录动画状态
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -14,25 +14,22 @@ export const AuthProvider = ({ children }) => {
       setUser(JSON.parse(storedUser));
     }
 
-    // 检查是否在登出状态
     const isLoggingOut = localStorage.getItem('isLoggingOut');
     if (isLoggingOut === 'true') {
       setShowLogout(true);
     }
 
-    // 检查是否在登录状态
     const isLoggingIn = localStorage.getItem('isLoggingIn');
     if (isLoggingIn === 'true') {
       setShowLogin(true);
       setTimeout(() => {
         setShowLogin(false);
         localStorage.removeItem('isLoggingIn');
-      }, 1500); // 登录动画持续时间
+      }, 1500); 
     }
   }, []);
 
   const login = (username) => {
-    // 标记登录状态
     localStorage.setItem('isLoggingIn', 'true');
     setShowLogin(true);
     setTimeout(() => {

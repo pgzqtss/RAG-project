@@ -54,10 +54,10 @@ def save_history():
         return jsonify({'message': 'Systematic review has been stored successfully'})
 
     except mysql.connector.IntegrityError as e:
-        print(f"Integrity error: {str(e)}")  # 打印数据库完整性错误
+        print(f"Integrity error: {str(e)}")
         return jsonify({'error': f'Integrity error: {str(e)}'}), 409
     except mysql.connector.Error as e:
-        print(f"Database error: {str(e)}")  # 打印数据库错误
+        print(f"Database error: {str(e)}")
         return jsonify({'error': f'Database error: {str(e)}'}), 500
     finally:
         cursor.close()

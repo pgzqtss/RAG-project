@@ -1,0 +1,31 @@
+/* 删除按钮容器样式 */
+.delete-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 4px;
+    width: 80px;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+  }
+  
+  .delete-button {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    color: #ff4d4d;
+    background-color: white;
+    border: none;
+    border-radius: 5px;
+    text-align: left;
+    transition: background-color 0.2s ease;
+  }
+  
+  .delete-button:hover {
+    background-color: #ffe6e6;
+    color: #d32f2f;
+  }
+  

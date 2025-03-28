@@ -6,7 +6,6 @@ import { redirect } from 'next/navigation';
 import { deleteUsersHistory } from '../actions/delete_user_history';
 import { usePathname } from 'next/navigation';
 
-
 export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
   const { user, login } = useAuth();
   const [history, setHistory] = useState([]);
@@ -28,12 +27,12 @@ export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
     event.stopPropagation();
     const promptUrl = `/${prompt_id}`;
 
-    deleteUsersHistory(prompt_id, refreshHistory)
+    await deleteUsersHistory(prompt_id, refreshHistory);
 
     if (currentUrl === promptUrl) {
       redirect('/');
     }
-  }
+  };
 
   function refreshHistory() {
     setRefresh(!refresh);
@@ -51,7 +50,7 @@ export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
   }, [refresh, user]);
 
   return (
-    <div className={`h-screen bg-gray-100 p-4 ${isCollapsed ? 'w-14' : 'w-'} transition-all duration-300`}>
+    <div className={`h-screen bg-gray-100 p-4 ${isCollapsed ? 'w-14' : 'w-64'} transition-all duration-300`}>
       <div className='flex items-center justify-between w-full pt-1'>
         {!isCollapsed && (
           <div className='justify-start text-xl text-gray-700 font-semibold mb-4'>
@@ -74,8 +73,8 @@ export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
             className='w-full flex justify-center align-middle items-center gap-x-2 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 shadow-sm mb-4'
             onClick={() => window.location.href = '/'}
           >
-            <img src='pen-to-square.svg' alt='Pen To Square Icon' height='26' width='26'/>
-            <div className='pt-1 text-md text-gray-700 '>
+            <img src='pen-to-square.svg' alt='Pen To Square Icon' height='26' width='26' />
+            <div className='pt-1 text-md text-gray-700'>
               New Systematic Review
             </div>
           </button>
@@ -84,7 +83,7 @@ export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
               <div className='mt-2 flex-1 overflow-y-auto max-h-[calc(100vh-150px)]'>
                 <ul>
                   {history.map(([prompt_id, user_input]) => (
-                    <li key={prompt_id}>
+                    <li key={prompt_id} className='group relative'>
                       <div
                         className='flex items-center justify-between p-2 hover:bg-gray-200 hover:rounded-xl cursor-pointer'
                         onMouseEnter={() => toggleHover(prompt_id)}
@@ -97,24 +96,22 @@ export default function Sidebar({ isCollapsed, toggleIsCollapsed }) {
                         {hoveredPrompt === prompt_id && (
                           <div className='relative inline-block'>
                             <div
-                              className='hover:bg-gray-300 hover:rounded-full'
-                              onClick={(event) => toggleEditMenu(prompt_id, event)} // Pass event and stop propagation
+                              className='hover:bg-gray-300 hover:rounded-full p-1 cursor-pointer'
+                              onClick={(event) => toggleEditMenu(prompt_id, event)}
                             >
-                              <img src='ellipsis.svg' alt='Close Icon' height='20' width='20' className='flex-shrink-0 px-[2px] py-[1px] mr-[2px]' />
+                              <img src='ellipsis.svg' alt='Options' height='20' width='20' />
                             </div>
                             {editOpenPromptId === prompt_id && (
                               <div
-                                className='absolute left-0 transform -translate-x-1 mt-2 rounded-md w-48 border z-50 bg-white ring-1 shadow-lg ring-black/5 focus:outline-hidden hover:bg-gray-50'
+                                className='absolute right-0 mt-2 w-24 bg-white rounded-md shadow-lg border z-50'
                                 onMouseLeave={() => setEditOpenPromptId(null)}
                               >
-                                <div className='py-1'>
-                                  <button 
-                                    className='block w-full px-4 py-2 text-left text-sm text-gray-700'
-                                    onClick={(event) => delete_history(prompt_id, refreshHistory, event)}
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
+                                <button
+                                  className='w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-100 hover:text-red-700 rounded-md'
+                                  onClick={(event) => delete_history(prompt_id, refreshHistory, event)}
+                                >
+                                  Delete
+                                </button>
                               </div>
                             )}
                           </div>

@@ -86,10 +86,14 @@ def save_and_plot_results(author_counts, id, output_image='author_counts.png'):
         print('get author_counter failed')
         return
     
-    output_csv = 'author_counts.csv'
-
-    output_image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'output', str(id), str(output_image)))
-    output_csv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'output', str(id), str(output_csv)))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    output_dir = os.path.join(base_dir, 'frontend', 'public', 'output', str(id))
+    
+    os.makedirs(output_dir, exist_ok=True)
+    
+    output_csv_path = os.path.join(output_dir, 'author_counts.csv')
+    output_image_path = os.path.join(output_dir, output_image)
+    os.makedirs(os.path.dirname(output_image_path), exist_ok=True)
 
     df = pd.DataFrame(author_counts.items(), columns=['Author', 'Count'])
     df['Count'] = df['Count'].astype(int)
@@ -105,11 +109,10 @@ def save_and_plot_results(author_counts, id, output_image='author_counts.png'):
     plt.xticks(rotation=45, ha='right')
     plt.grid(axis='y', linestyle='--')
     
-    # Save the plot as an image
     try:
         plt.savefig(output_image_path, bbox_inches='tight')
         print(f'Saved plot to {output_image_path}')
     except Exception as e:
         print(f'Failed to save plot: {e}')
     finally:
-        plt.close()  
+        plt.close()

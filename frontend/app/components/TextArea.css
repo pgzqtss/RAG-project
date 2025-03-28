@@ -1,0 +1,49 @@
+
+  .textarea-wrapper {
+    width: 100%;
+    background-color: white;
+    border-radius: 20px;
+    padding: 16px;
+    margin: 8px 0;
+    box-shadow: 0 4px 12px rgba(0.5, 0.5, 0.5, 0.1); 
+    transition: all 0.3s ease;
+  }
+
+  .textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    margin: 0;
+    background-color: white;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    color: #333;
+    resize: none;
+    border-radius: 12px;
+  }
+
+  .button-group {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .send-button {
+    background-color: white;
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .send-button:hover {
+    background-color: #f0f0f0;
+  }
+
+  .send-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
